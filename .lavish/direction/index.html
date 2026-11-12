@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blueprint direction</title>
+<style>
+:root{--bg:#f6f5f2;--ink:#131313;--mute:#6a6a6a;--rule:#d5d3cd;--card:#fff;--pick:#131313}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif}
+main{max-width:1180px;margin:0 auto;padding:40px 16px 80px}
+h1{font-size:clamp(28px,4vw,44px);line-height:1.05;letter-spacing:-.03em;margin:0 0 12px;max-width:20ch}
+.lede{max-width:62ch;color:#333;margin:0 0 8px}
+.how{color:var(--mute);font-size:14px;margin:0 0 40px;max-width:62ch}
+section.c{margin:0 0 56px;min-width:0}
+.c h2{font-size:24px;letter-spacing:-.02em;margin:0 0 4px;display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+.c h2 span{font-size:13px;font-weight:500;letter-spacing:0;color:var(--mute)}
+.c h2 .rec{background:var(--ink);color:#fff;padding:2px 8px;border-radius:99px}
+.c>p{margin:0 0 14px;max-width:70ch}
+.stage{position:relative;width:100%;aspect-ratio:1440/900;overflow:hidden;border:1px solid var(--rule);background:#ddd}
+.stage iframe{position:absolute;left:0;top:0;width:1440px;height:900px;border:0;transform-origin:0 0}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border:1px solid var(--rule);border-top:0;background:var(--card)}
+.facts div{padding:14px 16px;border-right:1px solid var(--rule);min-width:0;font-size:14px;line-height:1.45}
+.facts div:last-child{border:0}
+.facts b{display:block;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--mute);font-weight:600;margin-bottom:4px}
+.open{font-size:14px;margin-top:8px;display:inline-block;color:var(--ink)}
+form{border:2px solid var(--ink);background:var(--card);padding:24px;margin-top:8px}
+form h2{margin:0 0 4px;font-size:22px;letter-spacing:-.02em}
+form>p{margin:0 0 16px;color:var(--mute);font-size:14px}
+.opts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.opts label{border:1px solid var(--rule);padding:12px;cursor:pointer;display:block;min-width:0;font-size:14px;line-height:1.35}
+.opts label:has(input:checked){border-color:var(--pick);box-shadow:inset 0 0 0 1px var(--pick)}
+.opts input{margin:0 6px 0 0}
+.opts b{font-size:15px}
+.opts small{display:block;color:var(--mute);margin-top:4px}
+textarea{width:100%;min-height:84px;font:inherit;padding:10px;border:1px solid var(--rule);margin-bottom:14px}
+button{font:inherit;font-weight:600;background:var(--ink);color:#fff;border:0;padding:11px 18px;cursor:pointer}
+button:focus-visible,.opts label:focus-within{outline:2px solid #1733ff;outline-offset:2px}
+#state{margin-left:12px;font-size:14px;color:var(--mute)}
+@media (max-width:760px){.facts,.opts{grid-template-columns:1fr}.facts div{border-right:0;border-bottom:1px solid var(--rule)}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Which look should Blueprint have?</h1>
+  <p class="lede">Three directions for the whiteboard. Each one shows the same board: three artboards from a made-up booking site, with two open notes and one resolved. They differ in where the tool's controls live and how a note connects to the thing it is about.</p>
+  <p class="how">These are static mockups with a little real behaviour. Hover or tab onto a note or a pin in A and C. Click a frame or use the arrow keys in B. Pan and zoom are not built yet.</p>
+
+  <section class="c" id="a">
+    <h2>A · Drawing sheet <span class="rec">My pick</span></h2>
+    <p>The board is a technical drawing. Every control and the list of notes sit in one title block in the corner, the way an engineering drawing carries its details. Artboards have dimension lines and crop marks. A note is a red triangle with a line that runs out to its text in the margin.</p>
+    <div class="stage"><iframe src="a-drafting.html" title="Concept A, Drawing sheet" loading="lazy"></iframe></div>
+    <div class="facts">
+      <div><b>What you get</b>All notes are readable at once without opening anything. The title block doubles as a status panel: sheets, open notes, last change.</div>
+      <div><b>What it costs</b>Small capital letters in a monospace font are slower to read. Leader lines get tangled once an artboard has more than about five notes.</div>
+      <div><b>Depth and motion</b>Sheets lift off the grid with a soft shadow. Leader lines draw themselves in. The scale bar and dimensions update as you zoom.</div>
+    </div>
+    <a class="open" href="a-drafting.html" target="_blank">Open A at full size</a>
+  </section>
+
+  <section class="c" id="b">
+    <h2>B · Light table <span>Dark, one frame in focus</span></h2>
+    <p>The board is a photographer's light table. The frame you are working on is lit and the others fall back into the dark. Notes are yellow wax-pencil rings drawn round the thing you mean. A filmstrip along the bottom replaces the sidebar.</p>
+    <div class="stage"><iframe src="b-lighttable.html" title="Concept B, Light table" loading="lazy"></iframe></div>
+    <div class="facts">
+      <div><b>What you get</b>The strongest focus on one design at a time. A ring shows the exact area you mean, which a dot cannot. The filmstrip is a fast way to jump between frames.</div>
+      <div><b>What it costs</b>Dimmed frames are hard to compare side by side. You only see the notes for the lit frame. A dark surround changes how light designs look.</div>
+      <div><b>Depth and motion</b>The light moves to the frame you pick and the frame lifts slightly. The wax ring draws on. Other frames dim.</div>
+    </div>
+    <a class="open" href="b-lighttable.html" target="_blank">Open B at full size</a>
+  </section>
+
+  <section class="c" id="c">
+    <h2>C · Proof <span>Notes in the margin</span></h2>
+    <p>The board is a set of printer's proofs. Each artboard has a large number and its own margin, and notes sit in that margin level with their pin, like marks on a page proof. Your words are black and the agent's replies are blue. The controls are one line of type across the top.</p>
+    <div class="stage"><iframe src="c-proof.html" title="Concept C, Proof" loading="lazy"></iframe></div>
+    <div class="facts">
+      <div><b>What you get</b>The easiest notes to read and reply to. The black and blue split shows who said what at a glance. Very little interface on screen.</div>
+      <div><b>What it costs</b>Every artboard needs a margin, so fewer fit on screen. The big numerals compete with the designs. Two notes at the same height have to be pushed apart.</div>
+      <div><b>Depth and motion</b>Mostly flat by intent. A hairline runs from a note to its pin when you point at either one. The numeral tucks behind the sheet.</div>
+    </div>
+    <a class="open" href="c-proof.html" target="_blank">Open C at full size</a>
+  </section>
+
+  <form data-lavish-question="direction" id="pick">
+    <h2>Your choice</h2>
+    <p>Pick one, add what to keep or change, then queue the answer. You can still change it before you send.</p>
+    <div class="opts">
+      <label><input type="radio" name="dir" value="A · Drawing sheet"><b>A</b><small>Drawing sheet</small></label>
+      <label><input type="radio" name="dir" value="B · Light table"><b>B</b><small>Light table</small></label>
+      <label><input type="radio" name="dir" value="C · Proof"><b>C</b><small>Proof</small></label>
+      <label><input type="radio" name="dir" value="A mix"><b>Mix</b><small>Say which parts below</small></label>
+    </div>
+    <label for="notes" style="font-size:14px;font-weight:600;display:block;margin-bottom:6px">Keep, change, drop, explore</label>
+    <textarea id="notes" name="notes" placeholder="For example: A, but with the blue agent replies from C"></textarea>
+    <button type="submit">Queue this answer</button><span id="state" role="status"></span>
+  </form>
+</main>
+<script>
+// Scale each 1440x900 mockup to the width of its box.
+function fit(){document.querySelectorAll('.stage').forEach(s=>{s.firstElementChild.style.transform='scale('+s.clientWidth/1440+')'})}
+addEventListener('resize',fit);fit();
+document.getElementById('pick').addEventListener('submit',e=>{
+  e.preventDefault();
+  const d=new FormData(e.currentTarget),dir=d.get('dir'),notes=(d.get('notes')||'').trim(),st=document.getElementById('state');
+  if(!dir){st.textContent='Pick a direction first.';return}
+  const msg='Blueprint design direction: '+dir+(notes?'. Notes: '+notes:'');
+  if(window.lavish&&window.lavish.queuePrompt){window.lavish.queuePrompt(msg,{tag:'choice',text:'Direction: '+dir,element:e.currentTarget,queueKey:'direction',data:{question:'direction',answer:dir,notes}});st.textContent='Queued: '+dir+'. Press Send to Agent when ready.'}
+  else st.textContent='Chosen: '+dir+'. Tell the agent in the terminal.';
+});
+</script>
+</body>
+</html>

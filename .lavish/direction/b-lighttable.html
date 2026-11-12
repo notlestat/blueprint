@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>B · Light table</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+:root{--bg:#0c0c0d;--rail:#141415;--dim:#8d8a84;--text:#ece8df;--wax:#ffd21f;--edge:#ff7a1a}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{width:1440px;height:900px;overflow:hidden;position:relative;background:var(--bg);color:var(--text);font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:10px}
+/* the table: a soft pool of light behind the selected frame */
+.table{position:absolute;inset:0 0 132px 0;background:radial-gradient(620px 420px at var(--lx,470px) var(--ly,340px),rgba(255,248,230,.13),transparent 70%);transition:background .5s}
+.frame{position:absolute;background:#fff;filter:brightness(.42) saturate(.6);transition:filter .45s cubic-bezier(.2,.7,.2,1),box-shadow .45s,transform .45s cubic-bezier(.2,.7,.2,1);cursor:pointer;border:0;padding:0;text-align:left;display:block}
+.frame.lit{filter:none;box-shadow:0 0 0 1px rgba(255,255,255,.5),0 0 90px 8px rgba(255,246,222,.28),0 40px 80px -30px #000;transform:translateY(-4px)}
+.frame:focus-visible{outline:2px solid var(--wax);outline-offset:6px}
+.tag{position:absolute;left:0;top:calc(100% + 10px);color:var(--edge);letter-spacing:.14em;font-size:9px;white-space:nowrap;text-transform:uppercase}
+.tag b{color:var(--text);font-weight:400;margin-left:10px;letter-spacing:.04em;text-transform:none;opacity:.7}
+/* wax pencil rings drawn over the frame */
+.ring{position:absolute;pointer-events:none;overflow:visible}
+.ring path{fill:none;stroke:var(--wax);stroke-width:2.4;stroke-linecap:round;stroke-dasharray:420;stroke-dashoffset:420;filter:url(#rough)}
+.frame.lit .ring path{animation:draw .6s .2s cubic-bezier(.3,.6,.2,1) forwards}
+.ring text{fill:var(--wax);font-family:"Instrument Serif";font-style:italic;font-size:22px;opacity:0;transition:opacity .2s .55s}
+.frame.lit .ring text{opacity:1}
+@keyframes draw{to{stroke-dashoffset:0}}
+/* note slip beside the lit frame */
+.slip{position:absolute;width:250px;opacity:0;transform:translateX(-10px);transition:opacity .3s,transform .4s cubic-bezier(.2,.7,.2,1);pointer-events:none}
+.slip.show{opacity:1;transform:none;pointer-events:auto}
+.slip .n{font-family:"Instrument Serif";font-style:italic;font-size:44px;line-height:.8;color:var(--wax)}
+.slip p{font-family:"Instrument Serif";font-size:21px;line-height:1.18;margin:8px 0 12px;letter-spacing:-.005em}
+.slip .agent{font-family:"JetBrains Mono";font-size:10.5px;line-height:1.5;color:var(--dim);border-top:1px solid #333;padding-top:9px;margin:0}
+.slip .agent::before{content:"agent  ";color:var(--edge);letter-spacing:.1em;text-transform:uppercase;font-size:9px}
+.slip .act{margin-top:12px;display:flex;gap:14px;color:var(--dim);font-size:9px;letter-spacing:.1em;text-transform:uppercase}
+.slip .act span:first-child{color:var(--text);border-bottom:1px solid var(--wax);padding-bottom:2px}
+.slip.done .n{color:var(--dim)}
+/* top line */
+.head{position:absolute;left:28px;top:22px;right:28px;display:flex;justify-content:space-between;align-items:baseline;letter-spacing:.14em;text-transform:uppercase;font-size:9px;color:var(--dim)}
+.head h1{margin:0;font:400 26px/1 "Instrument Serif";letter-spacing:-.01em;text-transform:none;color:var(--text)}
+.head h1 i{color:var(--dim)}
+.keys span{margin-left:18px}.keys b{color:var(--text);font-weight:500}
+/* filmstrip: the navigator */
+.strip{position:absolute;left:0;right:0;bottom:0;height:132px;background:var(--rail);border-top:1px solid #262626;display:flex;align-items:center;gap:14px;padding:0 28px}
+.strip::before,.strip::after{content:"BLUEPRINT  ·  TIDEWATER-SITE  ·  3 FRAMES  ·  2 OPEN";position:absolute;left:28px;color:var(--edge);font-size:8px;letter-spacing:.3em;opacity:.8}
+.strip::before{top:9px}.strip::after{content:"→ 1A        → 2A        → 3A";bottom:9px;opacity:.5}
+.thumb{height:78px;background:#fff;overflow:hidden;position:relative;filter:brightness(.5);transition:filter .3s,outline-color .3s;outline:1px solid transparent;outline-offset:4px;border:0;padding:0;cursor:pointer;flex:none}
+.thumb.lit{filter:none;outline-color:var(--wax)}
+.thumb>div{transform-origin:0 0;position:absolute;left:0;top:0}
+.thumb em{position:absolute;right:4px;top:3px;background:var(--wax);color:#000;font-style:normal;font-size:8px;padding:0 4px;border-radius:6px;font-weight:500}
+.add{height:78px;width:78px;border:1px dashed #444;display:grid;place-items:center;color:var(--dim);font-size:9px;letter-spacing:.1em;flex:none}
+.zoom{margin-left:auto;text-align:right;color:var(--dim);letter-spacing:.14em;font-size:9px;text-transform:uppercase}
+.zoom b{display:block;font:400 34px/1 "Instrument Serif";color:var(--text);letter-spacing:-.02em}
+@media (prefers-reduced-motion:reduce){.frame,.slip,.table{transition:none}.frame.lit .ring path{animation:none;stroke-dashoffset:0}.frame.lit{transform:none}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><filter id="rough"><feTurbulence baseFrequency=".9" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="2.2"/></filter></svg>
+
+<div class="table" id="table"></div>
+<header class="head">
+  <h1>Tidewater site <i>— three frames</i></h1>
+  <div class="keys"><span><b>Space</b> pan</span><span><b>C</b> mark</span><span><b>1</b> fit</span><span><b>← →</b> next frame</span></div>
+</header>
+
+<button class="frame lit" data-f="1" data-lx="470" data-ly="340" style="left:170px;top:130px;width:600px;height:400px" aria-label="Frame 1A, Pricing desktop, 1 open note">
+  <div data-ab="pricing" style="width:100%;height:100%"></div>
+  <svg class="ring" style="left:206px;top:246px" width="188" height="50" viewBox="0 0 140 50" preserveAspectRatio="none"><path d="M12 26 C10 8 54 3 86 5 C120 7 134 16 130 28 C126 42 84 46 52 44 C24 42 8 38 16 20"/><text x="136" y="12">1</text></svg>
+  <span class="tag">1A <b>Pricing / desktop · 1440 × 960</b></span>
+</button>
+<button class="frame" data-f="2" data-lx="1010" data-ly="350" style="left:900px;top:130px;width:220px;height:440px" aria-label="Frame 2A, Sign in mobile, 1 open note">
+  <div data-ab="signin" style="width:100%;height:100%"></div>
+  <svg class="ring" style="left:10px;top:4px" width="200" height="46" viewBox="0 0 200 46"><path d="M8 34 C40 30 60 12 100 12 C140 12 160 30 192 34"/><text x="176" y="16">2</text></svg>
+  <span class="tag">2A <b>Sign in / mobile · 390 × 780</b></span>
+</button>
+<button class="frame" data-f="3" data-lx="1290" data-ly="500" style="left:1180px;top:400px;width:330px;height:200px" aria-label="Frame 3A, Empty state, resolved">
+  <div data-ab="empty" style="width:100%;height:100%"></div>
+  <span class="tag">3A <b>Empty state · 800 × 480</b></span>
+</button>
+
+<aside class="slip show" data-f="1" style="left:200px;top:574px;width:520px;display:grid;grid-template-columns:54px 1fr;column-gap:14px">
+  <div class="n">1</div>
+  <div><p>Make this button less loud. It fights the headline.</p>
+  <p class="agent">Switched to an outline style and dropped the shadow.</p>
+  <div class="act"><span>Reply</span><span>Resolve</span><span>10:06</span></div></div>
+</aside>
+<aside class="slip" data-f="2" style="left:1146px;top:136px">
+  <div class="n">2</div>
+  <p>Too much space above the form on small phones.</p>
+  <div class="act"><span>Reply</span><span>Resolve</span><span>No answer yet</span></div>
+</aside>
+<aside class="slip done" data-f="3" style="left:1180px;top:640px;width:230px">
+  <div class="n">3</div>
+  <p>Keep this line weight on the icon.</p>
+  <div class="act"><span>Resolved</span><span>Reopen</span></div>
+</aside>
+
+<nav class="strip" aria-label="Frames">
+  <button class="thumb lit" data-f="1" style="width:117px" aria-label="Go to frame 1A"><div data-ab="pricing" style="width:600px;height:400px;transform:scale(.195)"></div><em>1</em></button>
+  <button class="thumb" data-f="2" style="width:39px" aria-label="Go to frame 2A"><div data-ab="signin" style="width:220px;height:440px;transform:scale(.1773)"></div><em>1</em></button>
+  <button class="thumb" data-f="3" style="width:129px" aria-label="Go to frame 3A"><div data-ab="empty" style="width:330px;height:200px;transform:scale(.39)"></div></button>
+  <div class="add">+ agent</div>
+  <div class="zoom"><b>42%</b>pinch to zoom</div>
+</nav>
+
+<script src="shared.js"></script>
+<script>
+// Selecting a frame moves the light to it and shows its note.
+const table = document.getElementById('table');
+function light(n){
+  document.querySelectorAll('.frame,.thumb').forEach(el => el.classList.toggle('lit', el.dataset.f === n));
+  document.querySelectorAll('.slip').forEach(el => el.classList.toggle('show', el.dataset.f === n));
+  const f = document.querySelector(`.frame[data-f="${n}"]`);
+  table.style.setProperty('--lx', f.dataset.lx + 'px');
+  table.style.setProperty('--ly', f.dataset.ly + 'px');
+}
+document.querySelectorAll('.frame,.thumb').forEach(el => el.addEventListener('click', () => light(el.dataset.f)));
+addEventListener('keydown', e => {
+  const cur = +document.querySelector('.frame.lit').dataset.f;
+  if (e.key === 'ArrowRight') light(String(cur % 3 + 1));
+  if (e.key === 'ArrowLeft') light(String((cur + 1) % 3 + 1));
+});
+</script>
+</body>
+</html>

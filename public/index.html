@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Blueprint</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main id="viewport" aria-label="Board canvas">
+  <div id="world"></div>
+</main>
+
+<div id="empty" class="empty" hidden>
+  <h1>No artboards yet</h1>
+  <p>Ask your agent to make one. For example:</p>
+  <p class="prompt">“Use Blueprint to mock up a pricing page.”</p>
+</div>
+
+<header class="float title">
+  <i aria-hidden="true"></i><span>Blueprint</span> <span class="dim" id="project"></span>
+</header>
+
+<!-- Shows what each agent is doing. Selecting it jumps to the artboard being worked on. -->
+<div class="float agents" id="agents" role="status" aria-live="polite" hidden></div>
+
+<nav class="float panel" id="panel" aria-label="Artboards and comments">
+  <h2>Artboards</h2>
+  <ul id="artboard-list"></ul>
+  <h2 id="comments-heading" hidden>Comments</h2>
+  <ul id="comment-list"></ul>
+</nav>
+
+<div class="float dock" role="toolbar" aria-label="Tools">
+  <button type="button" data-tool="move" aria-pressed="true" title="Pan the canvas and move artboards">Move <kbd>V</kbd></button>
+  <button type="button" data-tool="comment" aria-pressed="false" title="Click an artboard to leave a comment">Comment <kbd>C</kbd></button>
+  <button type="button" data-tool="use" aria-pressed="false" title="Click and scroll inside artboards">Use <kbd>U</kbd></button>
+  <span class="sep" aria-hidden="true"></span>
+  <button type="button" id="fit" title="Show every artboard">Fit <kbd>1</kbd></button>
+  <button type="button" id="zoom" class="zoom" title="Reset zoom to 100%">100%</button>
+</div>
+
+<!-- One thread card, reused for whichever comment is open. -->
+<section class="float thread" id="thread" role="dialog" aria-label="Comment" hidden>
+  <div id="thread-body"></div>
+  <form class="composer" id="composer">
+    <input id="composer-input" name="text" autocomplete="off" maxlength="4000" placeholder="Reply" aria-label="Reply">
+    <button class="send" type="submit" aria-label="Send">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 12V2M3 6l4-4 4 4"/></svg>
+    </button>
+  </form>
+  <div class="row"><span id="thread-status"></span><button type="button" id="thread-toggle"></button></div>
+</section>
+
+<div class="float toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

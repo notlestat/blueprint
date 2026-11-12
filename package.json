@@ -1,0 +1,16 @@
+{
+  "name": "blueprint",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A local whiteboard where an AI agent places HTML artboards and you pin comments on them.",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test test/"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "zod": "^4.3.6"
+  }
+}

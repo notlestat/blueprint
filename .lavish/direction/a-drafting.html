@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A · Drawing sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Archivo:wdth,wght@75..100,400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+:root{--paper:#e9e6de;--ink:#15171a;--line:#15171a;--faint:rgba(21,23,26,.11);--rev:#d8371f;--sheet:#fff}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--paper);color:var(--ink);font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:10px;overflow:hidden;width:1440px;height:900px;position:relative;text-transform:uppercase;letter-spacing:.04em}
+/* drawing field: fine grid */
+.field{position:absolute;inset:26px;border:1.5px solid var(--line);
+ background-image:linear-gradient(var(--faint) 1px,transparent 1px),linear-gradient(90deg,var(--faint) 1px,transparent 1px);background-size:40px 40px;background-position:-1px -1px}
+/* zone references round the frame, like an engineering drawing */
+.zones{position:absolute;display:flex;font-size:9px;font-weight:500}
+.zones span{flex:1;display:grid;place-items:center;border-right:1px solid var(--line)}
+.zones span:last-child{border:0}
+.zones.top{left:26px;right:26px;top:8px;height:18px}
+.zones.left{top:26px;bottom:26px;left:8px;width:18px;flex-direction:column}
+.zones.left span{border-right:0;border-bottom:1px solid var(--line)}
+.zones.left span:last-child{border:0}
+
+.sheet{position:absolute;background:var(--sheet);box-shadow:0 1px 0 rgba(0,0,0,.25),0 18px 40px -18px rgba(40,30,10,.45)}
+.sheet .label{position:absolute;left:0;bottom:calc(100% + 26px);font-weight:600;font-size:10px;white-space:nowrap;cursor:grab}
+.sheet .label i{font-style:normal;font-family:"Archivo";font-stretch:75%;font-weight:800;font-size:22px;letter-spacing:-.01em;margin-right:8px;vertical-align:-3px}
+/* dimension line above each sheet */
+.dim{position:absolute;left:0;right:0;bottom:calc(100% + 10px);height:9px;border-left:1px solid var(--ink);border-right:1px solid var(--ink)}
+.dim::before{content:"";position:absolute;left:0;right:0;top:4px;border-top:1px solid var(--ink)}
+.dim b{position:absolute;left:50%;top:-3px;transform:translateX(-50%);background:var(--paper);padding:0 6px;font-weight:500;font-size:9px}
+.dim.v{left:auto;right:calc(100% + 10px);top:0;bottom:0;width:9px;height:auto;border:0;border-top:1px solid var(--ink);border-bottom:1px solid var(--ink)}
+.dim.v::before{left:4px;right:auto;top:0;bottom:0;border-top:0;border-left:1px solid var(--ink)}
+.dim.v b{left:-3px;top:50%;transform:translateY(-50%) rotate(-90deg);transform-origin:center;padding:0 6px}
+/* crop marks */
+.crop{position:absolute;width:10px;height:10px;border:0 solid var(--ink)}
+.crop.tl{left:-16px;top:-16px;border-right-width:1px;border-bottom-width:1px}
+.crop.tr{right:-16px;top:-16px;border-left-width:1px;border-bottom-width:1px}
+.crop.bl{left:-16px;bottom:-16px;border-right-width:1px;border-top-width:1px}
+.crop.br{right:-16px;bottom:-16px;border-left-width:1px;border-top-width:1px}
+
+/* revision marks: triangle + leader line to a note in the margin */
+svg.leaders{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.leader{fill:none;stroke:var(--rev);stroke-width:1.2;stroke-dasharray:400;stroke-dashoffset:400;animation:draw .7s cubic-bezier(.2,.7,.2,1) forwards}
+.leader.done{stroke:var(--ink);opacity:.45}
+@keyframes draw{to{stroke-dashoffset:0}}
+.tri{position:absolute;width:26px;height:24px;transform:translate(-50%,-62%);display:grid;place-items:center;font-weight:600;font-size:10px;color:#fff;cursor:pointer;background:none;border:0;padding:6px 0 0;font-family:inherit}
+.tri::before{content:"";position:absolute;inset:0;background:var(--rev);clip-path:polygon(50% 0,100% 100%,0 100%);z-index:-1;transition:transform .15s ease-out}
+.tri:hover::before,.tri.on::before{transform:scale(1.18)}
+.tri.done::before{background:var(--ink);opacity:.55}
+.note{position:absolute;width:214px;text-transform:none;letter-spacing:0;font-size:11px;line-height:1.45;border-top:1.5px solid var(--rev);padding-top:6px;background:linear-gradient(var(--paper),var(--paper)) no-repeat;transition:transform .18s ease-out}
+.note.on{transform:translateX(4px)}
+.note h4{margin:0 0 4px;font-size:9px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;color:var(--rev);display:flex;justify-content:space-between}
+.note p{margin:0 0 6px}
+.note .agent{padding-left:10px;border-left:1.5px solid var(--ink);color:#3a3d42}
+.note .agent::before{content:"AGENT  ";font-size:9px;letter-spacing:.06em;font-weight:600}
+.note.done{border-color:var(--ink);opacity:.6}.note.done h4{color:var(--ink)}
+
+/* title block, bottom right: this is the app's only chrome */
+.title{position:absolute;right:26px;bottom:26px;width:468px;background:var(--paper);border:1.5px solid var(--line);display:grid;grid-template-columns:1.25fr 1fr 1fr}
+.title>div{padding:6px 9px 7px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);min-height:38px}
+.title small{display:block;font-size:8px;opacity:.6;margin-bottom:2px}
+.title .name{grid-column:1/3;font-family:"Archivo";font-stretch:75%;font-weight:800;font-size:30px;letter-spacing:-.01em;line-height:.95;text-transform:uppercase;padding-top:9px}
+.title .name small{font-family:"IBM Plex Mono";font-weight:400;letter-spacing:.04em}
+.title .r{border-right:0}.title .wide{grid-column:1/-1;border-right:0}
+.title .tools{grid-column:1/-1;border-right:0;border-bottom:0;display:flex;gap:6px;padding:7px 9px}
+.title button{font:inherit;text-transform:uppercase;letter-spacing:.04em;background:none;border:1px solid var(--line);padding:5px 8px;cursor:pointer;color:var(--ink)}
+.title button kbd{font:inherit;opacity:.55;margin-left:6px}
+.title button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+.title button:focus-visible,.tri:focus-visible{outline:2px solid var(--rev);outline-offset:2px}
+.revs{width:100%;border-collapse:collapse;text-transform:none;letter-spacing:0;font-size:10px}
+.revs td{padding:2px 0;vertical-align:top}.revs td:first-child{width:22px;font-weight:600;color:var(--rev)}
+.revs td:last-child{text-align:right;text-transform:uppercase;font-size:8px;letter-spacing:.05em;white-space:nowrap;padding-left:8px}
+.revs tr.done td{opacity:.5}.revs tr.done td:first-child{color:var(--ink)}
+.scale{position:absolute;left:44px;bottom:42px;display:flex;align-items:flex-end;gap:8px}
+.scale .bar{width:160px;height:6px;border:1px solid var(--ink);background:linear-gradient(90deg,var(--ink) 25%,transparent 25% 50%,var(--ink) 50% 75%,transparent 75%)}
+@media (prefers-reduced-motion:reduce){.leader{animation:none;stroke-dashoffset:0}.note,.tri::before{transition:none}}
+</style>
+</head>
+<body>
+<div class="zones top"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span></div>
+<div class="zones left"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span></div>
+<div class="field"></div>
+
+<!-- sheet 01 -->
+<div class="sheet" style="left:110px;top:150px;width:600px;height:400px">
+  <div class="label"><i>01</i>Pricing / desktop</div>
+  <div class="dim"><b>1440</b></div><div class="dim v"><b>960</b></div>
+  <i class="crop tl"></i><i class="crop tr"></i><i class="crop bl"></i><i class="crop br"></i>
+  <div data-ab="pricing" style="width:100%;height:100%"></div>
+  <button class="tri" data-n="1" style="left:300px;top:292px" aria-label="Note 1, open">1</button>
+</div>
+<!-- sheet 02 -->
+<div class="sheet" style="left:870px;top:150px;width:220px;height:440px">
+  <div class="label"><i>02</i>Sign in / mobile</div>
+  <div class="dim"><b>390</b></div><div class="dim v"><b>780</b></div>
+  <i class="crop tl"></i><i class="crop tr"></i><i class="crop bl"></i><i class="crop br"></i>
+  <div data-ab="signin" style="width:100%;height:100%"></div>
+  <button class="tri" data-n="2" style="left:110px;top:26px" aria-label="Note 2, open">2</button>
+</div>
+<!-- sheet 03 -->
+<div class="sheet" style="left:110px;top:640px;width:330px;height:200px">
+  <div class="label"><i>03</i>Empty state</div>
+  <div class="dim"><b>800</b></div>
+  <i class="crop tl"></i><i class="crop tr"></i><i class="crop bl"></i><i class="crop br"></i>
+  <div data-ab="empty" style="width:100%;height:100%"></div>
+  <button class="tri done" data-n="3" style="left:165px;top:52px" aria-label="Note 3, resolved">3</button>
+</div>
+
+<svg class="leaders" aria-hidden="true">
+  <path class="leader" d="M410 448 L410 596 L520 596"/>
+  <path class="leader" d="M980 176 L1140 176 L1160 196" style="animation-delay:.12s"/>
+  <path class="leader done" d="M275 692 L470 692 L490 712" style="animation-delay:.24s"/>
+</svg>
+
+<div class="note" data-n="1" style="left:520px;top:590px">
+  <h4><span>Rev 1 · sheet 01</span><span>open</span></h4>
+  <p>Make this button less loud. It fights the headline.</p>
+  <p class="agent">Switched to an outline style and dropped the shadow.</p>
+</div>
+<div class="note" data-n="2" style="left:1160px;top:196px">
+  <h4><span>Rev 2 · sheet 02</span><span>open</span></h4>
+  <p>Too much space above the form on small phones.</p>
+</div>
+<div class="note done" data-n="3" style="left:490px;top:712px;width:190px">
+  <h4><span>Rev 3 · sheet 03</span><span>resolved</span></h4>
+  <p>Keep this line weight on the icon.</p>
+</div>
+
+<div class="scale"><div class="bar"></div><span>Scale 42% · 0 — 400 px</span></div>
+
+<section class="title" aria-label="Board">
+  <div class="name"><small>Board</small>Tidewater site</div>
+  <div class="r"><small>File</small>.blueprint/board.json</div>
+  <div><small>Sheets</small>3</div><div><small>Open notes</small>2</div><div class="r"><small>Last change</small>agent · 10:06</div>
+  <div class="wide"><small>Revisions</small>
+    <table class="revs">
+      <tr><td>1</td><td>Make this button less loud</td><td>open · replied</td></tr>
+      <tr><td>2</td><td>Too much space above the form</td><td>open</td></tr>
+      <tr class="done"><td>3</td><td>Keep this line weight</td><td>resolved</td></tr>
+    </table>
+  </div>
+  <div class="tools"><button aria-pressed="true">Move<kbd>V</kbd></button><button aria-pressed="false">Note<kbd>C</kbd></button><button aria-pressed="false">Fit all<kbd>1</kbd></button><button aria-pressed="false" style="margin-left:auto">Sheets<kbd>S</kbd></button></div>
+</section>
+
+<script src="shared.js"></script>
+<script>
+// Hovering a mark highlights its note, and the other way round.
+const link = (n, on) => document.querySelectorAll(`[data-n="${n}"]`).forEach(el => el.classList.toggle('on', on));
+document.querySelectorAll('[data-n]').forEach(el => {
+  el.addEventListener('mouseenter', () => link(el.dataset.n, true));
+  el.addEventListener('mouseleave', () => link(el.dataset.n, false));
+  el.addEventListener('focus', () => link(el.dataset.n, true));
+  el.addEventListener('blur', () => link(el.dataset.n, false));
+});
+</script>
+</body>
+</html>

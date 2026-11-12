@@ -1,0 +1,235 @@
+/* Tokens. Dark is the default; light follows the system setting. */
+:root {
+  --ground: #111112;
+  --dot: rgba(255, 255, 255, 0.07);
+  --material: rgba(38, 38, 40, 0.72);
+  --material-solid: #262628;
+  --hairline: rgba(255, 255, 255, 0.1);
+  --edge: rgba(255, 255, 255, 0.14);
+  --text: #f5f5f7;
+  --text-2: rgba(235, 235, 245, 0.62);
+  --text-3: rgba(235, 235, 245, 0.42);
+  --fill: rgba(255, 255, 255, 0.08);
+  --fill-press: rgba(255, 255, 255, 0.14);
+  --accent: #0a84ff;
+  --on-accent: #fff;
+  --done: #8e8e93;
+  --shadow-sheet: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 24px 60px -20px rgba(0, 0, 0, 0.8);
+  --shadow-float: 0 0 0 1px var(--hairline), 0 18px 50px -12px rgba(0, 0, 0, 0.7);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --z: 1; /* current zoom, set by canvas.js; pins and labels divide by it to stay one size */
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --ground: #f2f2f4;
+    --dot: rgba(0, 0, 0, 0.1);
+    --material: rgba(255, 255, 255, 0.76);
+    --material-solid: #fff;
+    --hairline: rgba(0, 0, 0, 0.09);
+    --edge: rgba(255, 255, 255, 0.9);
+    --text: #1d1d1f;
+    --text-2: rgba(60, 60, 67, 0.72);
+    --text-3: rgba(60, 60, 67, 0.55);
+    --fill: rgba(0, 0, 0, 0.05);
+    --fill-press: rgba(0, 0, 0, 0.1);
+    --accent: #0068d6;
+    --shadow-sheet: 0 0 0 1px rgba(0, 0, 0, 0.07), 0 24px 50px -24px rgba(0, 0, 0, 0.28);
+    --shadow-float: 0 0 0 1px var(--hairline), 0 18px 44px -14px rgba(0, 0, 0, 0.22);
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--ground);
+  color: var(--text);
+  font: 14px/1.4 system-ui, -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
+ul { list-style: none; margin: 0; padding: 0; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.dim { color: var(--text-2); font-weight: 400; }
+
+/* ---- Canvas ---- */
+#viewport {
+  position: fixed; inset: 0; overflow: hidden; touch-action: none;
+  background-image: radial-gradient(var(--dot) 1px, transparent 1.5px);
+}
+#viewport.grabbing { cursor: grabbing; }
+#viewport[data-tool="comment"] .cover { cursor: crosshair; }
+#world { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+
+.board { position: absolute; }
+.board .name {
+  position: absolute; left: 0; bottom: 100%; padding: 0 2px 10px;
+  font-size: 12.5px; font-weight: 500; color: var(--text-2); white-space: nowrap;
+  display: flex; gap: 8px; cursor: grab; user-select: none; -webkit-user-select: none;
+  transform: scale(calc(1 / var(--z))); transform-origin: 0 100%;
+}
+.board .name span { color: var(--text-3); font-weight: 400; font-variant-numeric: tabular-nums; }
+.board .sheet {
+  position: relative; width: 100%; height: 100%; border-radius: 10px; overflow: hidden;
+  background: #fff; box-shadow: var(--shadow-sheet);
+}
+.board iframe { display: block; width: 100%; height: 100%; border: 0; pointer-events: none; }
+/* The cover sits over the iframe and catches clicks, so the canvas can pan and
+   pin comments. The Use tool removes it so you can click inside the artboard. */
+.board .cover { position: absolute; inset: 0; }
+#viewport[data-tool="use"] .cover { display: none; }
+#viewport[data-tool="use"] iframe { pointer-events: auto; }
+.board.dragging { opacity: 0.85; }
+.board.dragging .name { cursor: grabbing; }
+
+/* ---- Pins ---- */
+.pin {
+  position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px;
+  border-radius: 50% 50% 50% 4px; background: var(--accent); color: var(--on-accent);
+  font-size: 12px; font-weight: 600; display: grid; place-items: center;
+  box-shadow: 0 0 0 2px var(--ground), 0 6px 14px -4px rgba(0, 0, 0, 0.5);
+  transform: scale(calc(var(--s, 1) / var(--z)));
+  transition: transform 160ms var(--ease-out);
+}
+.pin::after { content: ""; position: absolute; inset: -9px; } /* 44px hit area */
+.pin:active { --s: 0.94; }
+.pin.done { background: var(--done); }
+.pin[aria-expanded="true"] { --s: 1.12; }
+.pin.draft { opacity: 0.7; }
+@media (hover: hover) and (pointer: fine) {
+  .pin:hover { --s: 1.08; }
+  .pin[aria-expanded="true"]:hover { --s: 1.12; }
+}
+
+/* ---- Floating material: every piece of chrome uses this one surface ---- */
+.float {
+  position: fixed; z-index: 10; background: var(--material);
+  -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: var(--shadow-float), inset 0 1px 0 var(--edge);
+}
+.title {
+  left: 16px; top: 16px; border-radius: 999px; padding: 8px 14px 8px 10px; margin: 0;
+  display: flex; align-items: center; gap: 9px; font-weight: 600; letter-spacing: -0.01em;
+  max-width: calc(100vw - 32px); white-space: nowrap;
+}
+.title i { width: 20px; height: 20px; border-radius: 6px; background: var(--text); display: grid; place-items: center; flex: none; }
+.title i::after { content: ""; width: 8px; height: 8px; border: 1.5px solid var(--ground); border-radius: 2px; }
+#project { overflow: hidden; text-overflow: ellipsis; }
+#project:empty { display: none; }
+
+.panel { right: 16px; top: 16px; border-radius: 18px; padding: 6px; width: 252px; max-height: calc(100vh - 110px); overflow-y: auto; }
+.panel h2 { margin: 0; padding: 6px 10px 4px; font-size: 11.5px; font-weight: 500; color: var(--text-3); }
+.panel h2:not(:first-child) { margin-top: 6px; }
+.panel li button {
+  display: flex; width: 100%; min-height: 34px; align-items: center; gap: 8px; padding: 6px 10px;
+  border-radius: 12px; text-align: left; transition: background 120ms ease;
+}
+.panel li button:active { background: var(--fill-press); }
+.panel li button > span:not(.num):not(.badge) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.panel .badge {
+  margin-left: auto; flex: none; min-width: 18px; height: 18px; border-radius: 9px; padding: 0 5px;
+  background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 600; display: grid; place-items: center;
+}
+.panel .badge.quiet { background: none; color: var(--text-3); font-weight: 400; }
+.panel .num { flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-size: 10.5px; font-weight: 600; display: grid; place-items: center; }
+.panel .num.done { background: var(--done); }
+.panel .resolved > span:nth-child(2) { color: var(--text-3); }
+@media (hover: hover) { .panel li button:hover { background: var(--fill); } }
+
+.dock { left: 50%; bottom: 20px; transform: translateX(-50%); border-radius: 999px; padding: 5px; display: flex; align-items: center; gap: 2px; }
+.dock button {
+  height: 36px; padding: 0 14px; border-radius: 999px; font-weight: 500; display: flex; align-items: center; gap: 7px;
+  color: var(--text-2); white-space: nowrap;
+  transition: transform 140ms var(--ease-out), background 120ms ease;
+}
+.dock button:active { transform: scale(0.97); }
+.dock button[aria-pressed="true"] { background: var(--text); color: var(--ground); }
+.dock kbd { font: inherit; font-size: 11px; opacity: 0.55; }
+.dock .sep { width: 1px; height: 18px; background: var(--hairline); margin: 0 4px; }
+.dock .zoom { font-variant-numeric: tabular-nums; min-width: 62px; justify-content: center; }
+@media (hover: hover) { .dock button:not([aria-pressed="true"]):hover { background: var(--fill); color: var(--text); } }
+
+/* ---- Agents at work ---- */
+.agents { left: 50%; top: 16px; transform: translateX(-50%); border-radius: 20px; padding: 4px; display: grid; gap: 2px; max-width: min(520px, calc(100vw - 32px)); }
+.agents button { display: flex; align-items: center; gap: 9px; min-height: 30px; padding: 4px 13px 4px 10px; border-radius: 999px; text-align: left; transition: background 120ms ease; }
+.agents button:active { background: var(--fill-press); }
+.agents button > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.agents b { font-weight: 600; }
+@media (hover: hover) { .agents button:hover { background: var(--fill); } }
+/* The pulsing dot means "busy". Only opacity and transform animate, so it costs almost nothing. */
+.live { position: relative; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.live::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--accent); animation: ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite; }
+@keyframes ping { to { transform: scale(2.8); opacity: 0; } }
+
+/* An artboard an agent is working on: a ring, and a tag with the agent's name. */
+.board .ring { position: absolute; inset: 0; border-radius: 10px; pointer-events: none; opacity: 0; box-shadow: 0 0 0 calc(2px / var(--z)) var(--accent), 0 0 calc(34px / var(--z)) calc(2px / var(--z)) color-mix(in srgb, var(--accent) 55%, transparent); transition: opacity 240ms var(--ease-out); }
+.board.busy .ring { opacity: 1; animation: breathe 2.4s ease-in-out infinite; }
+@keyframes breathe { 50% { opacity: 0.55; } }
+.board .tag {
+  /* Below the artboard, so it never covers the name above it. */
+  position: absolute; right: 0; top: 100%; margin-top: 8px; padding: 3px 10px 3px 8px; border-radius: 999px;
+  background: var(--accent); color: var(--on-accent); font-size: 12px; font-weight: 600; white-space: nowrap;
+  display: flex; align-items: center; gap: 7px; pointer-events: none;
+  transform: scale(calc(1 / var(--z))); transform-origin: 100% 0;
+  opacity: 0; transition: opacity 200ms var(--ease-out);
+}
+.board.busy .tag { opacity: 1; }
+.board .tag .live, .board .tag .live::after { background: var(--on-accent); }
+/* A new artboard arrives with a short fade and settle. It happens rarely, so it can animate. */
+.board.arriving { animation: arrive 320ms var(--ease-out); }
+@keyframes arrive { from { opacity: 0; transform: scale(0.97); } }
+
+/* ---- Thread card: grows out of its pin ---- */
+.thread {
+  width: 320px; max-width: calc(100vw - 32px); border-radius: 22px; padding: 14px 14px 12px; z-index: 20;
+  transform-origin: 0 0; max-height: calc(100vh - 120px); overflow-y: auto;
+}
+.thread.entering { animation: thread-in 180ms var(--ease-out); }
+@keyframes thread-in { from { opacity: 0; transform: scale(0.96); } }
+.msg { display: grid; grid-template-columns: 22px 1fr; gap: 9px; margin-bottom: 11px; }
+.who { width: 22px; height: 22px; border-radius: 50%; background: var(--fill-press); font-size: 10.5px; font-weight: 600; display: grid; place-items: center; }
+.who.agent { background: var(--text); color: var(--ground); }
+.msg b { font-weight: 600; font-size: 12.5px; }
+.msg time { color: var(--text-3); font-size: 12px; margin-left: 6px; }
+.msg p { margin: 1px 0 0; line-height: 1.38; overflow-wrap: anywhere; white-space: pre-wrap; }
+.target {
+  display: inline-block; max-width: calc(100% - 31px); font-size: 12px; color: var(--text-2); background: var(--fill);
+  border-radius: 8px; padding: 3px 8px; margin: 0 0 12px 31px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.composer { display: flex; align-items: center; gap: 8px; background: var(--fill); border-radius: 999px; padding: 5px 5px 5px 14px; box-shadow: inset 0 0 0 1px var(--hairline); }
+.composer:focus-within { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.composer input { flex: 1; min-width: 0; font: inherit; font-size: 16px; color: var(--text); background: none; border: 0; outline: 0; }
+@media (min-width: 641px) { .composer input { font-size: 14px; } }
+.composer input::placeholder { color: var(--text-3); }
+.send { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; flex: none; transition: transform 140ms var(--ease-out); }
+.send:active { transform: scale(0.92); }
+.row { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding: 0 4px; font-size: 12.5px; color: var(--text-2); }
+.row button { font-weight: 500; color: var(--accent); padding: 4px 2px; }
+
+.empty { position: fixed; inset: 0; display: grid; place-content: center; text-align: center; padding: 24px; pointer-events: none; }
+.empty h1 { font-size: 26px; font-weight: 600; letter-spacing: -0.022em; line-height: 1.1; margin: 0 0 8px; }
+.empty p { margin: 0; color: var(--text-2); }
+.empty .prompt { margin-top: 12px; color: var(--text); background: var(--fill); border-radius: 999px; padding: 9px 16px; box-shadow: inset 0 0 0 1px var(--hairline); }
+
+.toast { left: 50%; bottom: 76px; transform: translateX(-50%); border-radius: 999px; padding: 8px 14px; font-size: 13px; z-index: 30; max-width: calc(100vw - 32px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .thread.entering { animation: none; }
+  .live::after, .board.busy .ring, .board.arriving { animation: none; }
+  .board .ring, .board .tag { transition: none; }
+  .pin, .dock button, .send { transition: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .float { background: var(--material-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@media (prefers-contrast: more) {
+  .float { background: var(--material-solid); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: 0 0 0 1.5px var(--text); }
+  :root { --text-2: var(--text); --text-3: var(--text); }
+}
+@media (max-width: 720px) {
+  .panel { top: auto; bottom: 76px; right: 16px; left: 16px; width: auto; max-height: 34vh; }
+  .agents { top: 60px; }
+  .dock kbd { display: none; }
+  .dock button { padding: 0 11px; }
+}

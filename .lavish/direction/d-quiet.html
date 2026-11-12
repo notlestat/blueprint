@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>D · Quiet</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Tokens. Dark is the default; light follows the system setting. */
+:root{
+  --ground:#111112; --dot:rgba(255,255,255,.07);
+  --material:rgba(38,38,40,.72); --material-solid:#262628; --hairline:rgba(255,255,255,.1); --edge:rgba(255,255,255,.14);
+  --text:#f5f5f7; --text-2:rgba(235,235,245,.6); --text-3:rgba(235,235,245,.34);
+  --fill:rgba(255,255,255,.08); --fill-press:rgba(255,255,255,.14);
+  --accent:#0a84ff; --on-accent:#fff; --done:#8e8e93;
+  --shadow-sheet:0 0 0 1px rgba(255,255,255,.06),0 24px 60px -20px rgba(0,0,0,.8);
+  --shadow-float:0 0 0 1px var(--hairline),0 18px 50px -12px rgba(0,0,0,.7);
+  --ease-out:cubic-bezier(.23,1,.32,1);
+}
+:root[data-theme=light]{
+  --ground:#f2f2f4; --dot:rgba(0,0,0,.09);
+  --material:rgba(255,255,255,.74); --material-solid:#fff; --hairline:rgba(0,0,0,.08); --edge:rgba(255,255,255,.9);
+  --text:#1d1d1f; --text-2:rgba(60,60,67,.66); --text-3:rgba(60,60,67,.38);
+  --fill:rgba(0,0,0,.05); --fill-press:rgba(0,0,0,.1);
+  --accent:#0071e3; --done:#8e8e93;
+  --shadow-sheet:0 0 0 1px rgba(0,0,0,.07),0 24px 50px -24px rgba(0,0,0,.28);
+  --shadow-float:0 0 0 1px var(--hairline),0 18px 44px -14px rgba(0,0,0,.22);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--ground);color:var(--text);font:14px/1.4 system-ui,-apple-system,"SF Pro Text","Helvetica Neue",sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* The canvas: a dotted ground that moves with the world. */
+#viewport{position:fixed;inset:0;overflow:hidden;touch-action:none;cursor:default;
+  background-image:radial-gradient(var(--dot) 1px,transparent 1.5px);background-size:24px 24px}
+#viewport.grabbing{cursor:grabbing}
+#world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+.board{position:absolute}
+.board .name{position:absolute;left:2px;bottom:calc(100% + 10px);font-size:12.5px;font-weight:500;color:var(--text-2);white-space:nowrap;display:flex;gap:8px;letter-spacing:.005em}
+.board .name span{color:var(--text-3);font-weight:400;font-variant-numeric:tabular-nums}
+.board .sheet{width:100%;height:100%;border-radius:10px;overflow:hidden;background:#fff;box-shadow:var(--shadow-sheet)}
+
+/* Comment pins */
+.pin{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50% 50% 50% 4px;background:var(--accent);color:var(--on-accent);font-size:12px;font-weight:600;display:grid;place-items:center;box-shadow:0 0 0 2px var(--ground),0 6px 14px -4px rgba(0,0,0,.5);transition:transform 160ms var(--ease-out)}
+.pin::after{content:"";position:absolute;inset:-9px} /* 44px hit area */
+.pin:active{transform:scale(.94)}
+.pin.done{background:var(--done)}
+.pin[aria-expanded=true]{transform:scale(1.12)}
+@media (hover:hover) and (pointer:fine){.pin:hover{transform:scale(1.08)}.pin[aria-expanded=true]:hover{transform:scale(1.12)}}
+
+/* Floating material: every piece of chrome uses this one surface */
+.float{position:fixed;background:var(--material);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);box-shadow:var(--shadow-float),inset 0 1px 0 var(--edge);z-index:10}
+.title{left:16px;top:16px;border-radius:999px;padding:8px 14px 8px 10px;display:flex;align-items:center;gap:9px;font-weight:600;letter-spacing:-.01em}
+.title i{width:20px;height:20px;border-radius:6px;background:var(--text);display:grid;place-items:center}
+.title i::after{content:"";width:8px;height:8px;border:1.5px solid var(--ground);border-radius:2px}
+.title span{color:var(--text-2);font-weight:400}
+.sheets{right:16px;top:16px;border-radius:18px;padding:6px;width:236px}
+.sheets h2{margin:0;padding:6px 10px 4px;font-size:11.5px;font-weight:500;color:var(--text-3)}
+.sheets button{display:flex;width:100%;align-items:center;gap:8px;padding:7px 10px;border-radius:12px;text-align:left;transition:background 120ms ease}
+.sheets button:active{background:var(--fill-press)}
+.sheets button[aria-current=true]{background:var(--fill)}
+.sheets em{margin-left:auto;font-style:normal;min-width:18px;height:18px;border-radius:9px;background:var(--accent);color:var(--on-accent);font-size:11px;font-weight:600;display:grid;place-items:center;padding:0 5px}
+.sheets em.none{background:none;color:var(--text-3);font-weight:400}
+@media (hover:hover){.sheets button:hover{background:var(--fill)}}
+.dock{left:50%;bottom:20px;transform:translateX(-50%);border-radius:999px;padding:5px;display:flex;align-items:center;gap:2px}
+.dock button{height:36px;padding:0 14px;border-radius:999px;font-weight:500;display:flex;align-items:center;gap:7px;transition:transform 140ms var(--ease-out),background 120ms ease;color:var(--text-2)}
+.dock button:active{transform:scale(.97)}
+.dock button[aria-pressed=true]{background:var(--text);color:var(--ground)}
+.dock kbd{font:inherit;font-size:11px;opacity:.5}
+.dock .sep{width:1px;height:18px;background:var(--hairline);margin:0 4px}
+.dock .zoom{font-variant-numeric:tabular-nums;min-width:62px;justify-content:center}
+@media (hover:hover){.dock button:not([aria-pressed=true]):hover{background:var(--fill);color:var(--text)}}
+
+/* Thread card: grows out of its pin */
+.thread{position:fixed;width:320px;border-radius:22px;padding:14px 14px 12px;transform-origin:0 0;z-index:5;
+  opacity:0;transform:scale(.96);pointer-events:none;transition:opacity 160ms var(--ease-out),transform 180ms var(--ease-out)}
+.thread.float{position:fixed}
+.instant .thread{transition:none}
+.thread.open{opacity:1;transform:none;pointer-events:auto}
+.msg{display:grid;grid-template-columns:22px 1fr;gap:9px;margin-bottom:11px}
+.who{width:22px;height:22px;border-radius:50%;background:var(--fill-press);font-size:10.5px;font-weight:600;display:grid;place-items:center}
+.who.agent{background:var(--text);color:var(--ground)}
+.msg b{font-weight:600;font-size:12.5px}.msg time{color:var(--text-3);font-size:12px;margin-left:6px}
+.msg p{margin:1px 0 0;line-height:1.38;letter-spacing:-.003em}
+.target{display:inline-flex;gap:6px;align-items:center;font-size:12px;color:var(--text-2);background:var(--fill);border-radius:8px;padding:3px 8px;margin:0 0 12px 31px}
+.composer{display:flex;align-items:center;gap:8px;background:var(--fill);border-radius:999px;padding:5px 5px 5px 14px;box-shadow:inset 0 0 0 1px var(--hairline)}
+.composer input{flex:1;min-width:0;font:inherit;color:var(--text);background:none;border:0;outline:0}
+.composer input::placeholder{color:var(--text-3)}
+.send{width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;flex:none;transition:transform 140ms var(--ease-out)}
+.send:active{transform:scale(.92)}
+.row{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:0 4px;font-size:12.5px;color:var(--text-2)}
+.row button{font-weight:500;color:var(--accent);padding:4px 2px}
+.hint{position:fixed;left:50%;bottom:76px;transform:translateX(-50%);font-size:12px;color:var(--text-3);pointer-events:none;white-space:nowrap}
+
+@media (prefers-reduced-motion:reduce){.thread{transition:opacity 120ms ease;transform:none}.pin,.dock button,.send{transition:none}}
+@media (prefers-reduced-transparency:reduce){.float{background:var(--material-solid);-webkit-backdrop-filter:none;backdrop-filter:none}}
+@media (max-width:640px){.sheets{display:none}.dock kbd{display:none}.dock button{padding:0 11px}}
+</style>
+</head>
+<body>
+<div id="viewport" aria-label="Board canvas">
+  <div id="world">
+    <div class="board" style="left:0;top:0;width:600px;height:400px">
+      <div class="name">Pricing / desktop <span>1440 × 960</span></div>
+      <div class="sheet" data-ab="pricing"></div>
+      <button class="pin" data-t="1" style="left:392px;top:258px" aria-label="Comment 1, open" aria-expanded="false">1</button>
+      <div class="thread float" id="t1" role="dialog" aria-label="Comment 1" style="left:410px;top:276px">
+        <div class="msg"><span class="who">C</span><div><b>You</b><time>10:05</time><p>Make this button less loud. It fights the headline.</p></div></div>
+        <div class="target">⌖ button “Start free trial”</div>
+        <div class="msg"><span class="who agent">A</span><div><b>Agent</b><time>10:06</time><p>Switched to an outline style and dropped the shadow.</p></div></div>
+        <div class="composer"><input placeholder="Reply" aria-label="Reply"><button class="send" aria-label="Send"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 12V2M3 6l4-4 4 4"/></svg></button></div>
+        <div class="row"><span>Open</span><button>Resolve</button></div>
+      </div>
+    </div>
+    <div class="board" style="left:700px;top:0;width:220px;height:440px">
+      <div class="name">Sign in / mobile <span>390 × 780</span></div>
+      <div class="sheet" data-ab="signin"></div>
+      <button class="pin" data-t="2" style="left:186px;top:22px" aria-label="Comment 2, open" aria-expanded="false">2</button>
+      <div class="thread float" id="t2" role="dialog" aria-label="Comment 2" style="left:204px;top:40px">
+        <div class="msg"><span class="who">C</span><div><b>You</b><time>10:09</time><p>Too much space above the form on small phones.</p></div></div>
+        <div class="composer"><input placeholder="Reply" aria-label="Reply"><button class="send" aria-label="Send"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 12V2M3 6l4-4 4 4"/></svg></button></div>
+        <div class="row"><span>Open · no answer yet</span><button>Resolve</button></div>
+      </div>
+    </div>
+    <div class="board" style="left:0;top:500px;width:330px;height:200px">
+      <div class="name">Empty state <span>800 × 480</span></div>
+      <div class="sheet" data-ab="empty"></div>
+      <button class="pin done" data-t="3" style="left:196px;top:44px" aria-label="Comment 3, resolved" aria-expanded="false">3</button>
+      <div class="thread float" id="t3" role="dialog" aria-label="Comment 3" style="left:214px;top:62px">
+        <div class="msg"><span class="who">C</span><div><b>You</b><time>Yesterday</time><p>Keep this line weight on the icon.</p></div></div>
+        <div class="row"><span>Resolved</span><button>Reopen</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="float title"><i></i>Tidewater site <span>3 artboards</span></div>
+<nav class="float sheets" aria-label="Artboards">
+  <h2>Artboards</h2>
+  <button aria-current="true">Pricing / desktop <em>1</em></button>
+  <button>Sign in / mobile <em>1</em></button>
+  <button>Empty state <em class="none">✓</em></button>
+</nav>
+<div class="hint">Two fingers to pan · pinch or ⌘-scroll to zoom · click a pin</div>
+<div class="float dock" role="toolbar" aria-label="Tools">
+  <button aria-pressed="true" data-tool>Move <kbd>V</kbd></button>
+  <button aria-pressed="false" data-tool>Comment <kbd>C</kbd></button>
+  <span class="sep"></span>
+  <button id="fit">Fit <kbd>1</kbd></button>
+  <button class="zoom" id="zoom">100%</button>
+</div>
+
+<script src="shared.js"></script>
+<script>
+// --- Camera: one transform on #world. x, y are screen pixels, z is zoom. ---
+const vp = document.getElementById('viewport'), world = document.getElementById('world'), zoomEl = document.getElementById('zoom');
+const cam = { x: 0, y: 0, z: 1 };
+function apply() {
+  world.style.transform = `translate(${cam.x}px,${cam.y}px) scale(${cam.z})`;
+  vp.style.backgroundPosition = `${cam.x}px ${cam.y}px`;
+  vp.style.backgroundSize = `${24 * cam.z}px ${24 * cam.z}px`;
+  zoomEl.textContent = Math.round(cam.z * 100) + '%';
+  place();
+}
+// Threads live in screen space, so they stay one size at any zoom. Each follows its pin.
+function place() {
+  const t = document.querySelector('.thread.open'); if (!t) return;
+  const r = document.querySelector(`.pin[data-t="${t.id.slice(1)}"]`).getBoundingClientRect();
+  const x = Math.min(r.right + 6, innerWidth - 336), y = Math.min(r.bottom + 6, innerHeight - t.offsetHeight - 80);
+  t.style.left = x + 'px'; t.style.top = Math.max(16, y) + 'px';
+}
+function fit() { // show every artboard with a margin
+  const w = 920, h = 700, pad = 110;
+  cam.z = Math.min((innerWidth - pad * 2) / w, (innerHeight - pad * 2) / h, 2);
+  cam.x = (innerWidth - w * cam.z) / 2; cam.y = (innerHeight - h * cam.z) / 2 + 10; apply();
+}
+vp.addEventListener('wheel', e => {
+  e.preventDefault();
+  if (e.ctrlKey || e.metaKey) { // pinch arrives as ctrl+wheel: zoom about the pointer
+    const z = Math.min(4, Math.max(.1, cam.z * Math.exp(-e.deltaY * .01)));
+    cam.x = e.clientX - (e.clientX - cam.x) * (z / cam.z);
+    cam.y = e.clientY - (e.clientY - cam.y) * (z / cam.z);
+    cam.z = z;
+  } else { cam.x -= e.deltaX; cam.y -= e.deltaY; }
+  apply();
+}, { passive: false });
+// Space + drag, or drag on empty canvas, pans 1:1 with the pointer.
+let space = false, drag = null;
+addEventListener('keydown', e => { if (e.code === 'Space' && e.target.tagName !== 'INPUT') { space = true; e.preventDefault(); } if (e.key === '1' && e.target.tagName !== 'INPUT') fit(); if (e.key === 'Escape') openThread(null); });
+addEventListener('keyup', e => { if (e.code === 'Space') space = false; });
+vp.addEventListener('pointerdown', e => {
+  if (e.target.closest('.pin,.thread')) return;
+  openThread(null);
+  if (!space && e.target.closest('.sheet')) return;
+  drag = { px: e.clientX, py: e.clientY, x: cam.x, y: cam.y }; vp.setPointerCapture(e.pointerId); vp.classList.add('grabbing');
+});
+vp.addEventListener('pointermove', e => { if (!drag) return; cam.x = drag.x + e.clientX - drag.px; cam.y = drag.y + e.clientY - drag.py; apply(); });
+vp.addEventListener('pointerup', () => { drag = null; vp.classList.remove('grabbing'); });
+document.getElementById('fit').onclick = fit; zoomEl.onclick = () => { cam.z = 1; apply(); };
+addEventListener('resize', fit); fit();
+
+// --- Threads: one open at a time, growing from its pin. ---
+function openThread(id) {
+  document.querySelectorAll('.thread').forEach(t => t.classList.toggle('open', t.id === 't' + id));
+  document.querySelectorAll('.pin').forEach(p => p.setAttribute('aria-expanded', p.dataset.t === id));
+  place();
+}
+document.querySelectorAll('.thread').forEach(t => document.body.append(t));
+document.querySelectorAll('.pin').forEach(p => p.addEventListener('click', () => openThread(p.getAttribute('aria-expanded') === 'true' ? null : p.dataset.t)));
+document.querySelectorAll('[data-tool]').forEach(b => b.addEventListener('click', () => document.querySelectorAll('[data-tool]').forEach(o => o.setAttribute('aria-pressed', o === b))));
+const light = matchMedia('(prefers-color-scheme: light)');
+const theme = () => document.documentElement.dataset.theme = (location.search.includes('light') || (light.matches && !location.search.includes('dark'))) ? 'light' : 'dark';
+light.addEventListener('change', theme); theme();
+if (location.hash === '#open') { document.body.classList.add('instant'); openThread('1'); }
+</script>
+</body>
+</html>
