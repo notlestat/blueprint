@@ -194,6 +194,58 @@ The page displays HTML that an agent wrote, so the server treats that HTML as un
 - `/artboard/:id` is served with `Content-Security-Policy: sandbox allow-scripts`, and each `iframe` has `sandbox="allow-scripts"`. Scripts in a mockup can run, but they have no access to the canvas page or the API.
 - Known and accepted: a mockup can load images, fonts and scripts from the internet, and any program on this machine can call the API.
 
+### Notes, references, arrows and Recents
+
+Added 12 November 2026, after an audit of version 1 and a look at how Milanote and Paper handle a design brief. Blueprint takes the mechanics only: cards beside the design, arrows between them, and a list of boards. It copies no code, name or look.
+
+`board.json` gains two lists. A board saved before them opens with both empty, and `version` stays 1.
+
+```json
+{
+  "items": [
+    { "id": "it_m2q8", "type": "note", "x": 0, "y": 1000, "width": 240, "text": "Calm, coastal, one clear action.", "author": "user", "createdAt": "…", "updatedAt": "…" },
+    { "id": "it_p0zz", "type": "image", "x": 300, "y": 1000, "width": 360, "asset": "4da4bd0213bfbe73.png", "aspect": 0.625, "height": 225, "title": "", "author": "user", "createdAt": "…", "updatedAt": "…" },
+    { "id": "it_k7lp", "type": "link", "x": 700, "y": 1000, "width": 280, "url": "https://example.com/", "title": "Example Domain", "description": "", "author": "agent", "createdAt": "…", "updatedAt": "…" }
+  ],
+  "connectors": [
+    { "id": "ln_h98f", "from": "it_m2q8", "to": "ab_k3f9", "label": "apply to hero", "author": "user", "createdAt": "…" }
+  ]
+}
+```
+
+- A note has no stored height. It grows with its text. An image's height is its width times `aspect`.
+- `author` is `user` or `agent`. It is there so a shared board can later name more people without a new format.
+- An arrow's ends are artboard or item ids. Deleting an artboard or an item deletes its arrows in the same save.
+- Images live in `.blueprint/assets/<16 hex>.<ext>`. The name is the start of the SHA-256 of the bytes.
+
+New routes:
+
+| Method and path | Body | Returns |
+| --- | --- | --- |
+| `POST /api/items` | `{ type, x?, y?, near?, width?, text?, asset?, url?, title?, description?, author?, id? }` | the item. `id` is for undo and must be unused. |
+| `PATCH /api/items/:id` | any of `{ x, y, width, text, title, description }` | the item |
+| `DELETE /api/items/:id` | none | `{ item, connectors }`: what was removed, for undo |
+| `POST /api/assets` | the image bytes | `{ asset, width, height }` |
+| `GET /assets/:name` | none | the image, with `nosniff` and a sandbox policy |
+| `POST /api/connectors` | `{ from, to, label?, author?, id? }` | the arrow |
+| `PATCH /api/connectors/:id` | `{ label }` | the arrow |
+| `DELETE /api/connectors/:id` | none | the arrow |
+| `GET /api/recents` | none | `{ current, projects }`, each with an outline of its board and its address if running |
+| `POST /api/recents/open` | `{ root }` | `{ url }`. Starts that project's server if needed. |
+| `POST /api/recents/forget` | `{ root }` | `{ ok }` |
+| `POST /api/recents/delete` | `{ root }` | `{ ok, movedTo }`. Stops that board's server, then moves its `.blueprint` folder to `<BLUEPRINT_HOME>/deleted/`. Refuses the open board and folders not in Recents. |
+
+Also added on 12 November 2026, at Corey's request: a fourth item type, `code`, shown in a fixed-width font with spacing kept. Pasting decides what text is, in this order: a web address becomes a link card, HTML becomes a new artboard, code becomes a code card, and anything else becomes a note. The rules are in `public/paste.js` and tested in `test/paste.test.mjs`. `add_note` takes `code: true`. Deleting a board from Recents moves it and does not erase it.
+
+New tools: `get_reference`, `add_note`, `add_reference`, `connect`, `update_item` and `delete_item`, for 17 in all. `get_board` now returns `notes`, `references` and `arrows`. Two activity actions were added: `noting` and `connecting`.
+
+Fixed in the same change, both found by the audit:
+
+- A malformed `%` escape in an address returned 500. It returns 400.
+- An artboard whose HTML file had gone could not be deleted, and reading it returned 500. A missing file now reads as an empty artboard, and delete works.
+
+State on 12 November 2026: 66 tests pass. Pasting HTML and code and deleting a board from Recents were also driven in Chrome. In Chrome at 1440 by 900, these were driven with dispatched pointer and key events and checked against `board.json`: the Note tool, double-click to add a note, an empty note being dropped, an arrow drawn with the Arrow tool, moving and resizing a note, labelling an arrow, delete and Cmd+Z, pasting a web address, text and an image, and opening a stopped project from Recents. Light mode and a 390 pixel wide screen were checked by screenshot. Not checked: real trackpad and mouse input, drag and drop of files from Finder, Safari and Firefox, screen readers, and a real agent session using the new tools.
+
 ## Acceptance criteria
 
 1. With no server running, calling `create_artboard` from an agent in project A starts the server and creates `A/.blueprint/board.json` and `A/.blueprint/artboards/<id>.html`.
@@ -254,8 +306,9 @@ Blueprint changes nothing outside its own repository and each project's `.bluepr
 - A mode where the agent watches for comments
 - A layers panel
 - Momentum after a pan gesture, and pinch on touch screens
-- Drawing or editing shapes and text by hand on the canvas
+- Freehand drawing and shapes on the canvas. Notes are the only thing you type on the canvas.
 - Editing HTML in the browser
-- More than one person on a board, accounts or sharing
+- More than one person on a board, accounts or sharing. Items record an `author` so this can come later.
+- Undo beyond the last deletion
 - Export to Figma, images or framework code
 - A desktop app wrapper

@@ -14,13 +14,16 @@
 </main>
 
 <div id="empty" class="empty" hidden>
-  <h1>No artboards yet</h1>
-  <p>Ask your agent to make one. For example:</p>
-  <p class="prompt">“Use Blueprint to mock up a pricing page.”</p>
+  <h1>An empty board</h1>
+  <p>Paste an image, a link or some text, or press N for a note. Then ask your agent, for example:</p>
+  <p class="prompt">“Use Blueprint to mock up a pricing page from my references.”</p>
 </div>
 
 <header class="float title">
-  <i aria-hidden="true"></i><span>Blueprint</span> <span class="dim" id="project"></span>
+  <button type="button" id="home-button" aria-haspopup="dialog" aria-controls="recents" title="Recents: every project with a board">
+    <i aria-hidden="true"></i><span>Blueprint</span> <span class="dim" id="project"></span>
+    <svg class="chev" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 4l2.5 2.5L7.5 4"/></svg>
+  </button>
 </header>
 
 <!-- Shows what each agent is doing. Selecting it jumps to the artboard being worked on. -->
@@ -29,14 +32,21 @@
 <nav class="float panel" id="panel" aria-label="Artboards and comments">
   <h2>Artboards</h2>
   <ul id="artboard-list"></ul>
+  <h2 id="items-heading" hidden>Notes and references</h2>
+  <ul id="item-list"></ul>
   <h2 id="comments-heading" hidden>Comments</h2>
   <ul id="comment-list"></ul>
 </nav>
 
 <div class="float dock" role="toolbar" aria-label="Tools">
-  <button type="button" data-tool="move" aria-pressed="true" title="Pan the canvas and move artboards">Move <kbd>V</kbd></button>
+  <button type="button" data-tool="move" aria-pressed="true" title="Pan, select and move things">Move <kbd>V</kbd></button>
+  <button type="button" data-tool="note" aria-pressed="false" title="Click the board to add a note">Note <kbd>N</kbd></button>
+  <button type="button" data-tool="arrow" aria-pressed="false" title="Drag from one thing to another to join them">Arrow <kbd>A</kbd></button>
   <button type="button" data-tool="comment" aria-pressed="false" title="Click an artboard to leave a comment">Comment <kbd>C</kbd></button>
   <button type="button" data-tool="use" aria-pressed="false" title="Click and scroll inside artboards">Use <kbd>U</kbd></button>
+  <span class="sep" aria-hidden="true"></span>
+  <button type="button" id="add-image" title="Add reference images. You can also paste or drop them.">Image</button>
+  <input type="file" id="image-input" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden>
   <span class="sep" aria-hidden="true"></span>
   <button type="button" id="fit" title="Show every artboard">Fit <kbd>1</kbd></button>
   <button type="button" id="zoom" class="zoom" title="Reset zoom to 100%">100%</button>
@@ -54,7 +64,24 @@
   <div class="row"><span id="thread-status"></span><button type="button" id="thread-toggle"></button></div>
 </section>
 
-<div class="float toast" id="toast" role="status" aria-live="polite" hidden></div>
+<!-- Edits an arrow's label. It sits on the screen, over the arrow. -->
+<input class="float label-editor" id="label-editor" maxlength="200" placeholder="Label" aria-label="Arrow label" autocomplete="off" hidden>
+
+<div class="float toast" id="toast" role="status" aria-live="polite" hidden><span id="toast-text"></span><button type="button" id="toast-action" hidden></button></div>
+
+<!-- Recents: every project folder that has a Blueprint board. -->
+<section class="recents" id="recents" role="dialog" aria-modal="true" aria-labelledby="recents-title" hidden>
+  <div class="recents-inner">
+    <header class="recents-head">
+      <h1 id="recents-title">Recents</h1>
+      <button type="button" class="close" id="recents-close" aria-label="Close Recents">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8"/></svg>
+      </button>
+    </header>
+    <ul class="recents-grid" id="recents-grid"></ul>
+    <p class="recents-foot">A project appears here once its board has been opened. Each project keeps its board in its own <code>.blueprint</code> folder.</p>
+  </div>
+</section>
 
 <script type="module" src="app.js"></script>
 </body>
