@@ -1,6 +1,6 @@
 # Blueprint
 
-Blueprint is a local whiteboard for designing UI with an AI agent. The agent writes HTML onto artboards. You watch the board in your browser, pin comments on what to change, and tell the agent to check the board.
+Blueprint is a local whiteboard for designing UI with an AI agent. The agent writes HTML onto artboards. You put notes, reference images, links and arrows beside them as the brief, pin comments on what to change, and tell the agent to check the board.
 
 Blueprint runs on your machine and needs no account. Each project keeps its own board in a `.blueprint/` folder next to its code.
 
@@ -43,6 +43,29 @@ Blueprint treats the folder that the agent starts `mcp.mjs` in as the project. T
 
 The agent reads comments only when you ask. It does not watch the board.
 
+## Give the agent references
+
+Put the brief on the board beside the artboards. The agent reads every note, reference and arrow with `get_board`, and sees each image with `get_reference`.
+
+- To add a note, press `N` and click the board, or double-click an empty spot. Type, then press Esc.
+- To add an image, paste it, drop it on the board, or select **Image**. Blueprint takes PNG, JPEG, GIF and WebP files up to 10 MB.
+- To add a link, paste a web address. The card shows the page's title if Blueprint can fetch the page.
+- To add code, paste it. Blueprint shows it on a code card in a fixed-width font, with its spacing kept. Code fenced with three backticks always becomes a code card.
+- To turn HTML into an artboard, paste the HTML. The new artboard renders it, and is named from the HTML's `<title>` or first heading.
+- To draw an arrow, press `A` and drag from one artboard, note or reference to another. To label the arrow, double-click it.
+
+To remove a note, a reference or an arrow, select it and press Delete. Press Cmd+Z to bring back the last thing you deleted.
+
+The agent can add notes, references and arrows too. Each note and reference that the agent adds has a blue **Agent** label above it.
+
+## Switch between boards
+
+Select **Blueprint** at the top left to open Recents. Recents lists every project whose board has run on this machine, each with a small map of its board. Select a project to open its board. If that project's server is not running, Blueprint starts it.
+
+To delete another project's board, select **…** on its card, then **Delete board**. Blueprint stops that board's server and moves the project's `.blueprint` folder to `~/.blueprint/deleted/`. The project's own files stay where they are. To get the board back, move the folder back into the project and rename it `.blueprint`. To hide a project without deleting its board, select **Remove from list**. You cannot delete the board you have open.
+
+Recents keeps the folder paths in `~/.blueprint/recents.json`. To keep the list in another folder, set the `BLUEPRINT_HOME` environment variable.
+
 ## Watch the agent work
 
 While an agent uses Blueprint, the board shows what the agent is doing:
@@ -65,7 +88,7 @@ The server prints its address. It tries port 4400 first. If another project's bo
 
 ## Keep designs with your code
 
-To keep designs with the code, commit the `.blueprint/` folder. Add `.blueprint/server.json` to the project's `.gitignore`, because that file only records the port of a running server.
+To keep designs with the code, commit the `.blueprint/` folder. It holds the artboards, the notes and arrows in `board.json`, and the reference images in `assets/`. Add `.blueprint/server.json` to the project's `.gitignore`, because that file only records the port of a running server.
 
 ## Run the tests
 
@@ -73,7 +96,7 @@ To keep designs with the code, commit the `.blueprint/` folder. Add `.blueprint/
 npm test
 ```
 
-The tests cover the board store, the HTTP routes, the origin and host checks, and the MCP tools as an agent calls them. No test drives the canvas page. That page was checked by hand in Chrome.
+The tests cover the board store, the notes, references and arrows, the HTTP routes, the origin and host checks, and the MCP tools as an agent calls them. No automated test drives the canvas page. That page was checked by hand in Chrome.
 
 ## More documentation
 

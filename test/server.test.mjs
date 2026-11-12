@@ -9,6 +9,8 @@ import { findChrome } from '../lib/screenshot.mjs';
 
 let app, root;
 before(async () => {
+  // Keep the Recents list in a temporary folder, never in the real ~/.blueprint.
+  process.env.BLUEPRINT_HOME = await mkdtemp(path.join(tmpdir(), 'blueprint-home-'));
   root = await mkdtemp(path.join(tmpdir(), 'blueprint-srv-'));
   app = await startServer({ root, port: 0 }); // port 0 = any free port
 });

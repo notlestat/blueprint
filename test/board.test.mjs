@@ -9,7 +9,7 @@ const fresh = async () => openBoard(await mkdtemp(path.join(tmpdir(), 'blueprint
 
 test('a new board is empty and makes its folders', async () => {
   const b = await fresh();
-  assert.deepEqual(b.get(), { version: 1, artboards: [], comments: [] });
+  assert.deepEqual(b.get(), { version: 1, artboards: [], comments: [], items: [], connectors: [] });
   assert.deepEqual((await readdir(b.dir)).sort(), ['artboards', 'trash']);
 });
 
