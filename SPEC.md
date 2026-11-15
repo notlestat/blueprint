@@ -115,11 +115,13 @@ All routes are on `http://127.0.0.1:<port>`. Bodies are JSON unless noted.
 | `PATCH /api/artboards/:id` | any of `{ name, x, y, width, height }` | the artboard |
 | `GET /api/artboards/:id/html` | none | the stored HTML as text |
 | `PUT /api/artboards/:id/html` | HTML as text | the artboard |
-| `DELETE /api/artboards/:id` | none | `{ ok }`; the file moves to `trash/` |
+| `DELETE /api/artboards/:id` | none | `{ ok, comments }`: the file moves to `trash/`, and `comments` counts the comments removed with it |
+| `POST /api/restore/:id` | none | `{ ok }`. Undoes the delete of an artboard or a comment. The server keeps the last 20 deletions in memory until it restarts. |
 | `GET /api/artboards/:id/screenshot` | none | PNG |
 | `POST /api/comments` | `{ artboardId, x, y, text, target? }` | the comment |
 | `POST /api/comments/:id/replies` | `{ author, text }` | the comment |
 | `PATCH /api/comments/:id` | `{ status }` | the comment |
+| `DELETE /api/comments/:id` | none | the comment |
 | `GET /artboard/:id` | none | the artboard as a full HTML document |
 
 Defaults: a new artboard is 1440 by 900. The server places it 80 pixels to the right of the rightmost artboard, at `y = 0`.

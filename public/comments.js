@@ -17,13 +17,14 @@ function when(iso) {
     : d.toLocaleDateString([], { day: 'numeric', month: 'short' });
 }
 
-export function createComments({ api, getBoard, nodes, toast }) {
+export function createComments({ api, getBoard, nodes, toast, onDelete }) {
   const card = $('thread');
   const body = $('thread-body');
   const form = $('composer');
   const input = $('composer-input');
   const statusText = $('thread-status');
   const toggle = $('thread-toggle');
+  const remove = $('thread-delete');
 
   let openId = null; // id of the comment whose thread is showing
   let draft = null; // { artboardId, x, y, target, pin } while writing a new comment
@@ -210,6 +211,20 @@ export function createComments({ api, getBoard, nodes, toast }) {
     try {
       await api('PATCH', `/api/comments/${c.id}`, { status: c.status === 'resolved' ? 'open' : 'resolved' });
     } catch {}
+  });
+
+  // The server keeps a deleted comment for a while, so Undo can bring it back.
+  remove.addEventListener('click', async () => {
+    const id = openId;
+    if (!id) return;
+    try {
+      await api('DELETE', `/api/comments/${id}`);
+    } catch {
+      return;
+    }
+    close();
+    onDelete?.(id);
+    toast('Comment deleted.', { label: 'Undo', run: () => api('POST', `/api/restore/${id}`).catch(() => {}) });
   });
 
   return {

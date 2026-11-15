@@ -21,13 +21,15 @@
 | Add an artboard from HTML | Paste HTML |
 | Add a note from text | Paste text that is not a web address, code or HTML |
 | Select a note, reference or arrow | Click it, or press Tab to reach a note or reference |
+| Select an artboard | Click it without dragging, click its name, or select it in the panel |
 | Move a note or reference | Drag it |
 | Resize a note or reference | Select it, then drag the handle at its bottom right corner |
 | Edit a note or code card | Double-click it, or select it and press Enter. Esc or Cmd+Enter saves. In a code card, Tab indents. |
 | Open a link card's address | Double-click the card, or select it and press Enter |
 | Label an arrow | Double-click the arrow, or select it and press Enter |
-| Delete the selection | Delete or Backspace |
-| Bring back the last deletion | Cmd+Z, or **Undo** in the message that follows a deletion |
+| Delete the selection | Delete or Backspace, or select **Delete** in the dock |
+| Delete a comment | Open it and select **Delete** |
+| Bring back the last deletion | Cmd+Z, or **Undo** in the message that follows a deletion. Undo for an artboard or a comment works until the server restarts. |
 | Open Recents | Select **Blueprint** at the top left |
 | Delete another project's board, or remove it from Recents | Select **…** on its card in Recents |
 | Close a comment card or Recents, clear the selection, or return to the Move tool | Esc |

@@ -17,7 +17,7 @@ let board = { version: 1, artboards: [], comments: [], items: [], connectors: []
 let tool = 'move';
 let firstBoard = true;
 let agents = []; // what each agent is doing right now, sent by the server
-let selection = null; // { kind: 'item' | 'connector', id } — what Delete and Enter act on
+let selection = null; // { kind: 'item' | 'connector' | 'artboard', id } — what Delete and Enter act on
 let lastDeleted = null; // what the last delete removed, so Cmd+Z can bring it back
 const nodes = new Map(); // artboard id -> { el, sheet, iframe, name, rev }
 
@@ -71,7 +71,7 @@ const canvas = createCanvas(viewport, world, {
     }
   },
 });
-const comments = createComments({ api, getBoard: () => board, nodes, toast });
+const comments = createComments({ api, getBoard: () => board, nodes, toast, onDelete: (id) => (lastDeleted = { restore: id }) });
 const items = createItems({ world, api, getBoard: () => board });
 
 // The box of anything an arrow can join, in board pixels, read from the page.
@@ -180,7 +180,8 @@ function render() {
 
   items.render();
   // Drop a selection whose thing has gone, for example after the agent deleted it.
-  if (selection && !(selection.kind === 'item' ? board.items : board.connectors).some((x) => x.id === selection.id)) selection = null;
+  const lists = { item: board.items, connector: board.connectors, artboard: board.artboards };
+  if (selection && !lists[selection.kind].some((x) => x.id === selection.id)) selection = null;
   showSelection();
 
   const empty = board.artboards.length === 0 && board.items.length === 0;
@@ -201,7 +202,11 @@ function render() {
 
 function showSelection() {
   for (const [id, node] of items.nodes) node.el.classList.toggle('selected', selection?.kind === 'item' && selection.id === id);
+  for (const [id, node] of nodes) node.el.classList.toggle('selected', selection?.kind === 'artboard' && selection.id === id);
   connectors.select(selection?.kind === 'connector' ? selection.id : null);
+  // The dock's Delete button shows while something is selected, so deleting
+  // does not depend on knowing the Delete key.
+  $('delete-button').hidden = !selection;
 }
 function select(next) {
   selection = next;
@@ -213,7 +218,13 @@ async function deleteSelection() {
   const { kind, id } = selection;
   selection = null;
   try {
-    if (kind === 'item') {
+    if (kind === 'artboard') {
+      const name = board.artboards.find((a) => a.id === id)?.name || 'Artboard';
+      const removed = await api('DELETE', `/api/artboards/${id}`);
+      lastDeleted = { restore: id };
+      const n = removed.comments || 0;
+      toast(`"${name}" deleted${n ? ` with its ${n} comment${n === 1 ? '' : 's'}` : ''}.`, { label: 'Undo', run: undo });
+    } else if (kind === 'item') {
       const removed = await api('DELETE', `/api/items/${id}`);
       lastDeleted = removed;
       toast(`${{ note: 'Note', code: 'Code card' }[removed.item.type] || 'Reference'} deleted.`, { label: 'Undo', run: undo });
@@ -230,7 +241,10 @@ async function undo() {
   const last = lastDeleted;
   lastDeleted = null;
   if (!last) return;
+  $('toast').hidden = true; // the "deleted" message is no longer true
   try {
+    // Artboards and comments are kept by the server, which puts them back itself.
+    if (last.restore) return void (await api('POST', `/api/restore/${last.restore}`));
     if (last.item) {
       const { id, type, x, y, width, text, asset, url, title, description, author } = last.item;
       await api('POST', '/api/items', { id, type, x, y, width, text, asset, url, title, description, author });
@@ -327,7 +341,10 @@ function renderPanel() {
       badge.className = open ? 'badge' : 'badge quiet';
       badge.textContent = open ? String(open) : '';
       badge.setAttribute('aria-label', open ? `${open} open comment${open === 1 ? '' : 's'}` : '');
-      return button([label, badge], () => canvas.frameRect(a, { inset: inset() })).li;
+      return button([label, badge], () => {
+        canvas.frameRect(a, { inset: inset() });
+        select({ kind: 'artboard', id: a.id });
+      }).li;
     }),
   );
 
@@ -429,6 +446,7 @@ document.querySelectorAll('.dock [data-tool]').forEach((b) => b.addEventListener
 $('fit').addEventListener('click', () => fit());
 $('zoom').addEventListener('click', () => canvas.zoomAt(innerWidth / 2, innerHeight / 2, 1));
 $('add-image').addEventListener('click', () => $('image-input').click());
+$('delete-button').addEventListener('click', () => deleteSelection());
 $('image-input').addEventListener('change', (e) => {
   uploadImages(e.target.files, viewCentre());
   e.target.value = '';
@@ -504,7 +522,8 @@ viewport.addEventListener('pointerdown', (e) => {
     const a = board.artboards.find((x) => x.id === boardEl.dataset.id);
     gesture = { kind: 'artboard', el: boardEl, a, px: e.clientX, py: e.clientY, x: a.x, y: a.y, moved: false };
   } else {
-    gesture = { kind: 'pan', px: e.clientX, py: e.clientY };
+    // A click on an artboard that does not turn into a drag selects it (see endGesture).
+    gesture = { kind: 'pan', px: e.clientX, py: e.clientY, sx: e.clientX, sy: e.clientY, boardId: spaceHeld ? null : boardEl?.dataset.id };
     viewport.classList.add('grabbing');
   }
 });
@@ -549,7 +568,11 @@ async function endGesture() {
   const g = gesture;
   gesture = null;
   viewport.classList.remove('grabbing');
-  if (!g || g.kind === 'pan') return;
+  if (!g) return;
+  if (g.kind === 'pan') {
+    if (g.boardId && Math.hypot(g.px - g.sx, g.py - g.sy) < 4) select({ kind: 'artboard', id: g.boardId });
+    return;
+  }
   if (g.kind === 'connect') {
     connectors.hideDraft();
     document.querySelectorAll('.link-target').forEach((n) => n.classList.remove('link-target'));
@@ -560,7 +583,10 @@ async function endGesture() {
     return;
   }
   g.el.classList.remove('dragging');
-  if (!g.moved) return;
+  if (!g.moved) {
+    if (g.kind === 'artboard') select({ kind: 'artboard', id: g.a.id }); // a click on the name selects it
+    return;
+  }
   try {
     if (g.kind === 'artboard') await api('PATCH', `/api/artboards/${g.a.id}`, { x: g.x, y: g.y });
     else if (g.kind === 'item') await api('PATCH', `/api/items/${g.it.id}`, { x: g.x, y: g.y });
@@ -691,7 +717,10 @@ addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && selection && onBoard) {
     e.preventDefault();
     if (selection.kind === 'item') items.open(selection.id);
-    else editLabel(selection.id);
+    else if (selection.kind === 'artboard') {
+      const a = board.artboards.find((x) => x.id === selection.id);
+      if (a) canvas.frameRect(a, { inset: inset() });
+    } else editLabel(selection.id);
     return;
   }
   if (e.code === 'Space') {

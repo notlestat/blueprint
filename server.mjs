@@ -214,8 +214,9 @@ export async function startServer({ root, port, home = defaultHome(), previews =
         case 'PATCH /api/artboards/:id':
           return json(res, 200, await store.updateArtboard(parts[2], await readJson(req)));
         case 'DELETE /api/artboards/:id':
-          await store.deleteArtboard(parts[2]);
-          return json(res, 200, { ok: true });
+          return json(res, 200, await store.deleteArtboard(parts[2]));
+        case 'POST /api/restore/:id':
+          return json(res, 200, await store.restore(parts[2]));
         case 'GET /api/artboards/:id/html': {
           const body = await store.getHtml(parts[2]);
           res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' });
@@ -236,6 +237,8 @@ export async function startServer({ root, port, home = defaultHome(), previews =
           return json(res, 201, await store.reply(parts[2], await readJson(req)));
         case 'PATCH /api/comments/:id':
           return json(res, 200, await store.setStatus(parts[2], (await readJson(req)).status));
+        case 'DELETE /api/comments/:id':
+          return json(res, 200, await store.deleteComment(parts[2]));
 
         case 'POST /api/items': {
           const item = await store.createItem(await readJson(req));
