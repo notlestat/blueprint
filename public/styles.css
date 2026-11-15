@@ -46,7 +46,12 @@ body {
   font: 14px/1.4 system-ui, -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
+  /* Blueprint is an app, not a page. Without this, a drag or Cmd+A starts a
+     text selection that paints every artboard blue and stays there. */
+  user-select: none; -webkit-user-select: none;
 }
+/* Text people type, and comment text they may want to copy, stays selectable. */
+input, textarea, .msg p { user-select: text; -webkit-user-select: text; }
 button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
 ul { list-style: none; margin: 0; padding: 0; }
 [hidden] { display: none !important; }
