@@ -68,8 +68,13 @@ ul { list-style: none; margin: 0; padding: 0; }
   font-size: 12.5px; font-weight: 500; color: var(--text-2); white-space: nowrap;
   display: flex; gap: 8px; cursor: grab; user-select: none; -webkit-user-select: none;
   transform: scale(calc(1 / var(--z))); transform-origin: 0 100%;
+  /* The name stays one size on screen while the artboard shrinks with the zoom.
+     Capping it at the artboard's screen width (--w is set per artboard) stops a
+     long name running over the next artboard's name and taking its clicks. */
+  max-width: calc(var(--w) * var(--z) * 1px);
 }
-.board .name span { color: var(--text-3); font-weight: 400; font-variant-numeric: tabular-nums; }
+.board .name span { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.board .name .size { color: var(--text-3); font-weight: 400; font-variant-numeric: tabular-nums; flex-shrink: 100; }
 .board .sheet {
   position: relative; width: 100%; height: 100%; border-radius: 10px; overflow: hidden;
   background: #fff; box-shadow: var(--shadow-sheet);

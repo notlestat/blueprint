@@ -14,7 +14,7 @@
 | Add a note without the tool | Double-click an empty spot on the board |
 | Arrow tool | `A`, then drag from one artboard, note or reference to another |
 | Comment tool | `C`, then click an artboard |
-| Use tool | `U`. Clicks and scrolling reach inside artboards. |
+| Use tool | `U`. Clicks and scrolling reach inside artboards. `Esc` or `V` goes back to Move, even after a click inside an artboard. |
 | Add a reference image | Paste it, drop it on the board, or select **Image** |
 | Add a link card | Paste a web address, or drop a link on the board |
 | Add a code card | Paste code, or text fenced with three backticks |

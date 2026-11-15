@@ -124,7 +124,7 @@ All routes are on `http://127.0.0.1:<port>`. Bodies are JSON unless noted.
 
 Defaults: a new artboard is 1440 by 900. The server places it 80 pixels to the right of the rightmost artboard, at `y = 0`.
 
-Stored HTML may be a full document or a fragment. If it has no `<html` tag, `GET /artboard/:id` wraps it in a minimal document. A helper script, defined in `lib/board.mjs`, is added to the served document and never to the stored file. It tells the canvas which element sits under a comment pin.
+Stored HTML may be a full document or a fragment. If it has no `<html` tag, `GET /artboard/:id` wraps it in a minimal document. A helper script, defined in `lib/board.mjs`, is added to the served document and never to the stored file. It tells the canvas which element sits under a comment pin, and passes Escape and the tool letters up to the canvas when keyboard focus is inside the artboard.
 
 Errors return `{ "error": "<plain sentence>" }` with status 400 for bad input, 403 for a refused origin, 404 for an unknown ID and 500 for anything else.
 
@@ -235,7 +235,7 @@ New routes:
 | `POST /api/recents/forget` | `{ root }` | `{ ok }` |
 | `POST /api/recents/delete` | `{ root }` | `{ ok, movedTo }`. Stops that board's server, then moves its `.blueprint` folder to `<BLUEPRINT_HOME>/deleted/`. Refuses the open board and folders not in Recents. |
 
-Also added on 12 November 2026, at Corey's request: a fourth item type, `code`, shown in a fixed-width font with spacing kept. Pasting decides what text is, in this order: a web address becomes a link card, HTML becomes a new artboard, code becomes a code card, and anything else becomes a note. The rules are in `public/paste.js` and tested in `test/paste.test.mjs`. `add_note` takes `code: true`. Deleting a board from Recents moves it and does not erase it.
+Also added on 12 November 2026: a fourth item type, `code`, shown in a fixed-width font with spacing kept. Pasting decides what text is, in this order: a web address becomes a link card, HTML becomes a new artboard, code becomes a code card, and anything else becomes a note. The rules are in `public/paste.js` and tested in `test/paste.test.mjs`. `add_note` takes `code: true`. Deleting a board from Recents moves it and does not erase it.
 
 New tools: `get_reference`, `add_note`, `add_reference`, `connect`, `update_item` and `delete_item`, for 17 in all. `get_board` now returns `notes`, `references` and `arrows`. Two activity actions were added: `noting` and `connecting`.
 
