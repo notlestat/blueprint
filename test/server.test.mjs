@@ -69,6 +69,8 @@ test('the artboard document is wrapped, sandboxed and carries the helper', async
   assert.equal(r.headers.get('content-security-policy'), 'sandbox allow-scripts');
   assert.match(r.body, /<body><h1>New<\/h1><script>/);
   assert.match(r.body, /blueprint:elementAt/);
+  // Keys pressed inside an artboard in the Use tool are passed up to the canvas.
+  assert.match(r.body, /blueprint:key/);
 });
 
 test('comments: create, reply, resolve', async () => {

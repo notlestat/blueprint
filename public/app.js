@@ -154,10 +154,17 @@ function render() {
     }
     node.el.style.width = a.width + 'px';
     node.el.style.height = a.height + 'px';
+    // The name may not run wider than the artboard on screen (see .name in the CSS).
+    node.el.style.setProperty('--w', a.width);
     node.iframe.title = a.name;
+    node.name.title = a.name;
+    const label = document.createElement('span');
+    label.className = 'label';
+    label.textContent = a.name;
     const size = document.createElement('span');
+    size.className = 'size';
     size.textContent = `${a.width} × ${a.height}`;
-    node.name.replaceChildren(a.name, size);
+    node.name.replaceChildren(label, size);
     // Reload the artboard only when its HTML changed.
     if (node.rev !== (a.rev || 1)) {
       node.rev = a.rev || 1;
@@ -414,6 +421,9 @@ function setTool(next) {
   viewport.dataset.tool = next;
   document.querySelectorAll('.dock [data-tool]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tool === next)));
   if (next !== 'comment') comments.close();
+  // Leaving Use: take focus back from the artboard last clicked, so the
+  // board's shortcuts reach this page again.
+  if (next !== 'use' && document.activeElement instanceof HTMLIFrameElement) document.activeElement.blur();
 }
 document.querySelectorAll('.dock [data-tool]').forEach((b) => b.addEventListener('click', () => setTool(b.dataset.tool)));
 $('fit').addEventListener('click', () => fit());
@@ -451,6 +461,9 @@ viewport.addEventListener('pointerdown', (e) => {
 
   if (tool === 'comment' && boardEl && !onName && !spaceHeld) {
     // A click on an artboard starts a comment at that point, in artboard pixels.
+    // preventDefault stops the click moving focus to the page, which would
+    // pull it straight back out of the comment box that startDraft focuses.
+    e.preventDefault();
     const r = boardEl.querySelector('.sheet').getBoundingClientRect();
     comments.startDraft(boardEl.dataset.id, Math.round((e.clientX - r.left) / canvas.cam.z), Math.round((e.clientY - r.top) / canvas.cam.z));
     return;
@@ -689,16 +702,33 @@ addEventListener('keydown', (e) => {
     return;
   }
   const key = e.key.toLowerCase();
-  if (key === 'v') setTool('move');
-  else if (key === 'n') setTool('note');
-  else if (key === 'a') setTool('arrow');
-  else if (key === 'c') setTool('comment');
-  else if (key === 'u') setTool('use');
-  else if (key === '1') fit();
-  else if (key.startsWith('arrow')) {
+  if (toolKey(key)) return;
+  if (key.startsWith('arrow')) {
     const step = e.shiftKey ? 200 : 60;
     canvas.panBy(key === 'arrowleft' ? step : key === 'arrowright' ? -step : 0, key === 'arrowup' ? step : key === 'arrowdown' ? -step : 0);
   }
+});
+
+// The dock's letter shortcuts. Returns true when the key was one of them.
+function toolKey(key) {
+  const tools = { v: 'move', n: 'note', a: 'arrow', c: 'comment', u: 'use' };
+  if (tools[key]) setTool(tools[key]);
+  else if (key === '1') fit();
+  else return false;
+  return true;
+}
+
+// In Use, a click inside an artboard moves keyboard focus into its iframe, and
+// key presses stop reaching this page. The helper script in each artboard
+// passes Escape and the tool letters back up. Only a message from one of the
+// artboards on this board is acted on.
+addEventListener('message', (e) => {
+  if (e.data?.type !== 'blueprint:key' || typeof e.data.key !== 'string') return;
+  if (![...nodes.values()].some((n) => n.iframe.contentWindow === e.source)) return;
+  if (recents.isOpen()) return;
+  const key = e.data.key.toLowerCase();
+  if (key === 'escape') setTool('move');
+  else toolKey(key);
 });
 addEventListener('keyup', (e) => {
   if (e.code === 'Space') spaceHeld = false;
