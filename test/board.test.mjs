@@ -64,6 +64,49 @@ test('deleteArtboard moves the file to trash and removes its comments', async ()
   assert.equal(await readFile(path.join(b.dir, 'trash', trash[0]), 'utf8'), 'bye');
 });
 
+test('restore brings a deleted artboard back with its HTML, comments and arrows, in place', async () => {
+  const b = await fresh();
+  const a = await b.createArtboard({ name: 'A', html: 'hello' });
+  const other = await b.createArtboard({ name: 'B' });
+  const note = await b.createItem({ type: 'note', text: 'why' });
+  await b.addComment({ artboardId: other.id, x: 1, y: 1, text: 'first' });
+  await b.addComment({ artboardId: a.id, x: 2, y: 2, text: 'second' });
+  await b.createConnector({ from: note.id, to: a.id });
+  const removed = await b.deleteArtboard(a.id);
+  assert.equal(removed.comments, 1);
+  assert.equal(b.get().connectors.length, 0);
+  await b.restore(a.id);
+  assert.deepEqual(b.get().artboards.map((x) => x.name), ['A', 'B']);
+  assert.deepEqual(b.get().comments.map((c) => c.thread[0].text), ['first', 'second']);
+  assert.equal(b.get().connectors.length, 1);
+  assert.equal(await b.getHtml(a.id), 'hello');
+  assert.deepEqual(await readdir(path.join(b.dir, 'trash')), []);
+  // A second undo of the same delete has nothing to bring back.
+  await assert.rejects(b.restore(a.id), /Nothing deleted/);
+});
+
+test('deleteComment removes one comment, and restore puts it back at the same number', async () => {
+  const b = await fresh();
+  const a = await b.createArtboard({ name: 'A' });
+  await b.addComment({ artboardId: a.id, x: 1, y: 1, text: 'one' });
+  const two = await b.addComment({ artboardId: a.id, x: 1, y: 1, text: 'two' });
+  await b.addComment({ artboardId: a.id, x: 1, y: 1, text: 'three' });
+  await b.deleteComment(two.id);
+  assert.deepEqual(b.get().comments.map((c) => c.thread[0].text), ['one', 'three']);
+  await b.restore(two.id);
+  assert.deepEqual(b.get().comments.map((c) => c.thread[0].text), ['one', 'two', 'three']);
+  await assert.rejects(b.deleteComment('c_zzzz'), (e) => e instanceof BoardError && e.status === 404);
+});
+
+test('a deleted comment cannot come back after its artboard has gone', async () => {
+  const b = await fresh();
+  const a = await b.createArtboard({ name: 'A' });
+  const c = await b.addComment({ artboardId: a.id, x: 1, y: 1, text: 'orphan' });
+  await b.deleteComment(c.id);
+  await b.deleteArtboard(a.id);
+  await assert.rejects(b.restore(c.id), /artboard/);
+});
+
 test('comments: add, reply and resolve', async () => {
   const b = await fresh();
   const a = await b.createArtboard({ name: 'A' });

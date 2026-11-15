@@ -82,6 +82,15 @@ test('comments: create, reply, resolve', async () => {
   assert.equal((await call('PATCH', `/api/comments/${commentId}`, { status: 'resolved' })).body.status, 'resolved');
 });
 
+test('DELETE a comment, then POST /api/restore brings it back', async () => {
+  const made = await call('POST', '/api/comments', { artboardId, x: 5, y: 5, text: 'Delete me' });
+  assert.equal((await call('DELETE', `/api/comments/${made.body.id}`)).status, 200);
+  assert.ok(!(await call('GET', '/api/board')).body.comments.some((c) => c.id === made.body.id));
+  assert.equal((await call('POST', `/api/restore/${made.body.id}`)).status, 200);
+  assert.ok((await call('GET', '/api/board')).body.comments.some((c) => c.id === made.body.id));
+  assert.equal((await call('POST', '/api/restore/c_none')).status, 404);
+});
+
 test('bad input gives 400 with a sentence, unknown ids give 404', async () => {
   const tooBig = await call('POST', '/api/artboards', { name: 'x', width: 9000 });
   assert.equal(tooBig.status, 400);

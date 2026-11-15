@@ -54,7 +54,7 @@ Put the brief on the board beside the artboards. The agent reads every note, ref
 - To turn HTML into an artboard, paste the HTML. The new artboard renders it, and is named from the HTML's `<title>` or first heading.
 - To draw an arrow, press `A` and drag from one artboard, note or reference to another. To label the arrow, double-click it.
 
-To remove a note, a reference or an arrow, select it and press Delete. Press Cmd+Z to bring back the last thing you deleted.
+To delete an artboard, a note, a reference or an arrow, select it and press Delete, or select **Delete** in the dock. To select an artboard, click it without dragging. To delete a comment, open it and select **Delete**. Press Cmd+Z, or select **Undo** in the message that appears, to bring back the last thing you deleted. A deleted artboard's HTML stays in `.blueprint/trash/`.
 
 The agent can add notes, references and arrows too. Each note and reference that the agent adds has a blue **Agent** label above it.
 
