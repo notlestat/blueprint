@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "A local whiteboard where an AI agent places HTML artboards and you pin comments on them.",
+  "description": "Design UI with your coding agent on a shared canvas. The agent draws screens as working HTML, you mark them up with notes, arrows and comments, and it reads the board and revises.",
   "engines": { "node": ">=22" },
   "scripts": {
     "start": "node server.mjs",

@@ -1,6 +1,6 @@
 # Blueprint
 
-Blueprint is a local whiteboard for designing UI with an AI agent. The agent writes HTML onto artboards. You put notes, reference images, links and arrows beside them as the brief, pin comments on what to change, and tell the agent to check the board.
+Blueprint is a canvas where you design UI with your coding agent. The agent draws each screen as a working HTML artboard. You set out the brief beside it with notes, reference images, links and arrows, then pin comments on what to change. The agent reads the board and revises.
 
 Blueprint runs on your machine and needs no account. Each project keeps its own board in a `.blueprint/` folder next to its code.
 
