@@ -33,6 +33,10 @@
 | Open Recents | Select **Blueprint** at the top left |
 | Delete another project's board, or remove it from Recents | Select **…** on its card in Recents |
 | Close a comment card or Recents, clear the selection, or return to the Move tool | Esc |
+| Show or hide the chat | Select **Agent** at the top left |
+| Send a chat message | Enter. Shift+Enter starts a new line. |
+| Stop the chat agent | Select the square button where **Send** was |
+| Start a new chat | Select **New**. The agent forgets the conversation. The board does not change. |
 
 The panel lists every artboard, note, reference and comment as a button.
 
@@ -68,7 +72,10 @@ A failed tool call returns an error result with a sentence that names the proble
 | --- | --- | --- |
 | `BLUEPRINT_ROOT` | `mcp.mjs` | The project folder. The default is the folder `mcp.mjs` starts in. |
 | `BLUEPRINT_CHROME` | `lib/screenshot.mjs` | The path to a Chrome or Chromium binary |
-| `BLUEPRINT_HOME` | `server.mjs` | The folder that holds `recents.json`. The default is `~/.blueprint`. |
+| `BLUEPRINT_HOME` | `server.mjs`, `scripts/export-skills.mjs` | The folder that holds `recents.json` and `agent-skills/`. The default is `~/.blueprint`. |
+| `BLUEPRINT_MODEL` | `server.mjs` | The model the chat agent uses. The default is `claude-opus-5-5`. |
+| `BLUEPRINT_AGENT_NAME` | `mcp.mjs` | The name the board shows for the agent. The chat agent sets it to "Blueprint agent". Without it, the name comes from the MCP client. |
+| `ANTHROPIC_API_KEY` | The Claude Agent SDK | An API key for the chat agent. Without it, the chat agent uses the account Claude Code is signed in to. |
 
 ## Server options
 
@@ -86,9 +93,13 @@ A failed tool call returns an error result with a sentence that names the proble
   assets/<hash>.<ext>   reference images, named by a hash of their content
   trash/                HTML of deleted artboards
   server.json           port and process id of the running server
+  chat.json             the chat agent's messages and its Claude Code session id
 
 ~/.blueprint/
   recents.json          the folder path and last edit time of each project, for Recents
+  agent-skills/         design skills downloaded by `npm run skills`
+    manifest.json       the source commits, the lead skills, the copied skills and the skipped skills
+    skills/<name>/      the text files of one skill
   deleted/<name>-<time>/  a board deleted from Recents: the project's whole .blueprint folder
 ```
 
@@ -112,6 +123,10 @@ Agent activity is held in memory and is not saved. A deleted note or reference i
 | Link address | 2,000 characters, `http` or `https` only |
 | Projects in Recents | 30 |
 | Time before a silent agent is cleared from the board | 90 seconds |
+| Chat message | 8,000 characters |
+| Chat messages kept in `chat.json` | the last 200 |
+| Steps the chat agent takes for one message | 80 |
+| Text copied from one skill | 2 MB |
 
 The server rejects a value over a limit with HTTP status 400 and a message that names the limit.
 
@@ -125,6 +140,9 @@ The server rejects a value over a limit with HTTP status 400 and a message that 
 | `lib/assets.mjs` | Reads an image's type and size from its first bytes |
 | `lib/preview.mjs` | Fetches a link's title and description, and refuses local addresses |
 | `lib/recents.mjs` | Reads and writes `recents.json`, and outlines each board for Recents |
+| `lib/agent.mjs` | The chat agent: runs Claude Code with the board tools and the design skills, decides what it may use, and keeps the chat |
+| `scripts/export-skills.mjs` | Downloads design skills from GitHub and copies their text into `~/.blueprint/agent-skills/` |
+| `skills.config.json` | The repositories, skill folders, `when` notes and lead skills that `npm run skills` downloads |
 | `mcp.mjs` | The MCP server |
 | `public/app.js` | The canvas page: board drawing, tools, pointer and key input |
 | `public/canvas.js` | Pan, zoom and framing |
@@ -132,5 +150,6 @@ The server rejects a value over a limit with HTTP status 400 and a message that 
 | `public/items.js` | Notes, images and link cards, and note editing |
 | `public/connectors.js` | Arrows and their labels |
 | `public/recents.js` | The Recents view |
+| `public/chat.js` | The chat panel |
 | `public/styles.css` | All styles and colour tokens |
 | `test/` | Tests for the board store, the server and the MCP tools |

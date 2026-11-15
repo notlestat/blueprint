@@ -74,7 +74,9 @@ async function call(method, route, body) {
 // One id per agent session. Two agents on one board show up as two workers.
 const AGENT_ID = randomUUID();
 // The client tells us its name when it connects, for example "claude-code".
+// Blueprint's own chat agent runs Claude Code too, so it names itself instead.
 function agentName() {
+  if (process.env.BLUEPRINT_AGENT_NAME) return process.env.BLUEPRINT_AGENT_NAME.slice(0, 40);
   const raw = server.server.getClientVersion()?.name || 'Agent';
   return raw.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }

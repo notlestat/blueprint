@@ -7,6 +7,7 @@ import { createComments } from './comments.js';
 import { createItems, KIND } from './items.js';
 import { createConnectors } from './connectors.js';
 import { createRecents } from './recents.js';
+import { createChat } from './chat.js';
 import { URL_ONLY, FENCE, isHtml, looksLikeCode, htmlName } from './paste.js';
 
 const $ = (id) => document.getElementById(id);
@@ -794,6 +795,8 @@ events.addEventListener('board', (e) => {
     p.start();
   }
 });
+const chat = createChat({ api });
+events.addEventListener('chat', (e) => chat.update(JSON.parse(e.data)));
 events.addEventListener('activity', (e) => {
   agents = JSON.parse(e.data);
   renderAgents();

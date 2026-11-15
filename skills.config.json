@@ -1,0 +1,15 @@
+{
+  "sources": [
+    { "repo": "Leonxlnx/taste-skill", "skills": ["taste-skill"] },
+    {
+      "repo": "pbakaus/impeccable",
+      "skills": [
+        {
+          "folder": "plugin/skills/impeccable",
+          "when": "to refine or review a design, especially for comments like make it bolder, quieter, more polished, or fix the type, colour or layout; use the matching reference file such as bolder, quieter, polish, typeset, colorize, layout or critique"
+        }
+      ]
+    }
+  ],
+  "lead": ["taste-skill"]
+}

@@ -196,6 +196,17 @@ The page displays HTML that an agent wrote, so the server treats that HTML as un
 - `/artboard/:id` is served with `Content-Security-Policy: sandbox allow-scripts`, and each `iframe` has `sandbox="allow-scripts"`. Scripts in a mockup can run, but they have no access to the canvas page or the API.
 - Known and accepted: a mockup can load images, fonts and scripts from the internet, and any program on this machine can call the API.
 
+### Chat agent
+
+Added 15 November 2026. The board has its own design agent, in a chat panel.
+
+- `lib/agent.mjs` runs Claude Code through the Claude Agent SDK with `mcp.mjs` as its only MCP server, the exported design skills as a local plugin named `blueprint-design`, and a permission function that allows only the board tools and reading inside the skills folder.
+- The server keeps one conversation per board in `.blueprint/chat.json`, with the Claude Code session id, so a later message resumes the same session, also after a restart.
+- `GET /api/chat` returns `{ busy, model, skills, messages }`. `POST /api/chat` with `{ text }` starts a turn and returns 202, or 409 while a turn runs. `POST /api/chat/stop` stops the turn. `POST /api/chat/clear` forgets the conversation and the session.
+- The event stream sends a `chat` event with the same object whenever the chat changes.
+- Each message has `role`: `user`, `agent`, `step` for a one-line description of a tool call, or `error`.
+- `scripts/export-skills.mjs` clones each repository in `skills.config.json` and copies the text files of the listed skills into `~/.blueprint/agent-skills/` as a local plugin. Its `manifest.json` records each source commit and the lead skills. The agent's system prompt is built from that manifest, loads the lead skills before designing, and puts the board's references ahead of a skill's default style. The defaults are taste-skill as the lead skill and impeccable for refining and reviewing, with a `when` note that the prompt passes to the agent. The clone is sparse, so only the listed skill folders are downloaded.
+
 ### Notes, references, arrows and Recents
 
 Added 12 November 2026, after an audit of version 1 and a look at how Milanote and Paper handle a design brief. Blueprint takes the mechanics only: cards beside the design, arrows between them, and a list of boards. It copies no code, name or look.

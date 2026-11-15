@@ -13,6 +13,7 @@ import { openBoard, BoardError, LIMITS } from './lib/board.mjs';
 import { screenshot } from './lib/screenshot.mjs';
 import { IMAGE_TYPES } from './lib/assets.mjs';
 import { fetchPreview } from './lib/preview.mjs';
+import { createAgent, DEFAULT_MODEL } from './lib/agent.mjs';
 import { defaultHome, touchProject, forgetProject, isKnownProject, listProjects, runningUrl, deleteBoard } from './lib/recents.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -25,10 +26,24 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; ch
 // The canvas page may only load its own files, and may only frame its own artboards.
 const PAGE_CSP = "default-src 'self'; frame-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'";
 
-export async function startServer({ root, port, home = defaultHome(), previews = true } = {}) {
+// `agentQuery` replaces the Agent SDK's query() in tests, so no test calls a model.
+export async function startServer({ root, port, home = defaultHome(), previews = true, agentQuery, skillsDir } = {}) {
   root = path.resolve(root || process.cwd());
   const store = await openBoard(root);
   const clients = new Set(); // open event-stream responses
+
+  // The built-in design agent. Its chat lives in .blueprint/chat.json; its
+  // design skills come from scripts/export-skills.mjs.
+  const agent = createAgent({
+    root,
+    dir: store.dir,
+    home,
+    skillsDir: skillsDir || path.join(home, 'agent-skills'),
+    getBoard: () => store.get(),
+    model: process.env.BLUEPRINT_MODEL || DEFAULT_MODEL,
+    ...(agentQuery && { query: agentQuery }),
+  });
+  await agent.load();
 
   const json = (res, status, body) => {
     res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
@@ -72,6 +87,7 @@ export async function startServer({ root, port, home = defaultHome(), previews =
     for (const res of clients) res.write(frame);
   };
   store.onChange((board) => send('board', board));
+  agent.onChange((chat) => send('chat', chat));
 
   // ---- Recents: add this project to the shared list, and bump it on each edit ----
   // Edits come in bursts while an agent works, so the write waits for a quiet second.
@@ -200,6 +216,7 @@ export async function startServer({ root, port, home = defaultHome(), previews =
           res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', connection: 'keep-alive' });
           res.write(`event: board\ndata: ${JSON.stringify(store.get())}\n\n`);
           res.write(`event: activity\ndata: ${JSON.stringify(activityList())}\n\n`);
+          res.write(`event: chat\ndata: ${JSON.stringify(agent.state())}\n\n`);
           clients.add(res);
           req.on('close', () => clients.delete(res));
           return;
@@ -209,6 +226,14 @@ export async function startServer({ root, port, home = defaultHome(), previews =
         case 'POST /api/activity':
           setActivity(await readJson(req));
           return json(res, 200, activityList());
+        case 'GET /api/chat':
+          return json(res, 200, agent.state());
+        case 'POST /api/chat':
+          return json(res, 202, agent.send((await readJson(req)).text));
+        case 'POST /api/chat/:id':
+          if (parts[2] === 'stop') return json(res, 200, agent.stop());
+          if (parts[2] === 'clear') return json(res, 200, await agent.clear());
+          break;
         case 'POST /api/artboards':
           return json(res, 201, await store.createArtboard(await readJson(req)));
         case 'PATCH /api/artboards/:id':
@@ -350,8 +375,10 @@ export async function startServer({ root, port, home = defaultHome(), previews =
     port: actualPort,
     url: `http://127.0.0.1:${actualPort}`,
     store,
+    agent,
     async close() {
       clearInterval(sweep);
+      await agent.close();
       clearTimeout(touchTimer);
       for (const res of clients) res.end();
       await new Promise((r) => server.close(r));
