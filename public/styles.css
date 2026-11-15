@@ -395,11 +395,64 @@ ul { list-style: none; margin: 0; padding: 0; }
 .recents-foot code { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
 @media (hover: hover) { .recent:not([disabled]):hover { background: var(--fill); } }
 
+/* ---- Chat with the design agent ---- */
+.chat {
+  left: 16px; top: 64px; bottom: 84px; width: 340px; max-width: calc(100vw - 32px); border-radius: 22px;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.chat.closed { bottom: auto; width: auto; border-radius: 999px; }
+.chat-head { display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 6px; flex: none; }
+.chat:not(.closed) .chat-head { box-shadow: 0 1px 0 var(--hairline); }
+#chat-toggle {
+  display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 4px 10px; border-radius: 999px; font-weight: 600;
+  transition: background 120ms ease, transform 140ms var(--ease-out);
+}
+#chat-toggle:active { transform: scale(0.97); }
+#chat-toggle .chev { color: var(--text-3); transition: transform 160ms var(--ease-out); }
+.chat.closed #chat-toggle .chev { transform: rotate(-90deg); }
+#chat-toggle .live { display: none; }
+.chat.busy #chat-toggle .live { display: block; }
+.chat-clear { margin-left: auto; flex: none; font-size: 12.5px; font-weight: 500; color: var(--accent); padding: 5px 8px; border-radius: 999px; }
+.chat-clear:disabled { color: var(--text-3); }
+.chat.closed .chat-clear, .chat.closed .chat-body { display: none; }
+@media (hover: hover) { #chat-toggle:hover, .chat-clear:not(:disabled):hover { background: var(--fill); } }
+
+.chat-body { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.chat-log { list-style: none; margin: 0; padding: 12px 14px 4px; overflow-y: auto; flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.chat-msg { line-height: 1.42; overflow-wrap: anywhere; white-space: pre-wrap; }
+/* You: a quiet bubble on the right. The agent: plain text. Its tool calls: one dim line each. */
+.chat-msg.user { align-self: flex-end; max-width: 86%; background: var(--fill-press); padding: 7px 12px; border-radius: 16px 16px 4px 16px; }
+.chat-msg.agent { margin: 2px 0 4px; white-space: normal; }
+.chat-msg.agent p { margin: 0 0 8px; }
+.chat-msg.agent ul { margin: 0 0 8px; padding-left: 18px; list-style: disc; }
+.chat-msg.agent li { margin-bottom: 4px; }
+.chat-msg.agent > :last-child { margin-bottom: 0; }
+.chat-msg.agent strong { font-weight: 600; }
+.chat-msg.agent code { font: 12.5px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--fill); border-radius: 5px; padding: 1px 4px; }
+.chat-msg.step, .chat-msg.working { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-2); white-space: normal; }
+.chat-msg.step .dot { flex: none; width: 5px; height: 5px; border-radius: 50%; background: var(--text-3); margin: 0 1.5px; }
+.chat-msg.working .live { margin: 0 0.5px; }
+.chat-msg.error { color: var(--danger); font-size: 13px; }
+.chat-hint { color: var(--text-2); font-size: 13px; line-height: 1.45; }
+.chat-hint p { margin: 0 0 8px; }
+
+.chat-form { display: flex; align-items: flex-end; gap: 8px; margin: 8px 10px 10px; background: var(--fill); border-radius: 18px; padding: 5px 5px 5px 13px; box-shadow: inset 0 0 0 1px var(--hairline); flex: none; }
+.chat-form:focus-within { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.chat-form textarea {
+  flex: 1; min-width: 0; resize: none; font: inherit; font-size: 16px; line-height: 1.4; color: var(--text); background: none; border: 0; outline: 0;
+  padding: 5px 0; max-height: 132px;
+}
+@media (min-width: 641px) { .chat-form textarea { font-size: 14px; } }
+.chat-form textarea::placeholder { color: var(--text-3); }
+.chat-form .send .stop, .chat.busy .chat-form .send .up { display: none; }
+.chat.busy .chat-form .send .stop { display: block; }
+.chat.busy .chat-form .send { background: var(--text); color: var(--ground); }
+
 @media (prefers-reduced-motion: reduce) {
   .thread.entering { animation: none; }
   .live::after, .board.busy .ring, .board.arriving { animation: none; }
   .board .ring, .board .tag { transition: none; }
-  .pin, .dock button, .send, .title button, .recent, .more { transition: none; }
+  .pin, .dock button, .send, .title button, .recent, .more, #chat-toggle, #chat-toggle .chev { transition: none; }
   .card-menu { animation: none; }
 }
 @media (prefers-reduced-transparency: reduce) {
@@ -412,6 +465,7 @@ ul { list-style: none; margin: 0; padding: 0; }
 @media (max-width: 720px) {
   .panel { top: auto; bottom: 76px; right: 16px; left: 16px; width: auto; max-height: 34vh; }
   .agents { top: 60px; }
+  .chat:not(.closed) { right: 16px; width: auto; bottom: 76px; z-index: 12; }
   .dock kbd { display: none; }
   .dock button { padding: 0 9px; }
   .dock .sep { margin: 0 1px; }

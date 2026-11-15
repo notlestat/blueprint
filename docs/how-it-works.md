@@ -88,6 +88,25 @@ An agent writes the HTML on your artboards, and that HTML can include scripts. B
 
 Two things are not blocked, by choice. An artboard can load images, fonts and scripts from the internet, because real designs need them. Any program on your machine can call the server, because any such program can already edit the files.
 
+## How the chat agent is fenced in
+
+The chat agent is Claude Code, run by the Claude Agent SDK inside the server process. Claude Code is built to run commands and edit files, so `lib/agent.mjs` takes most of it away before the first message.
+
+- **Its only MCP server is `mcp.mjs`.** The server starts the same `mcp.mjs` an outside agent uses, so the chat agent and an outside agent have the same board tools and the same rules. `strictMcpConfig` drops every other MCP server, and `disableClaudeAiConnectors` drops the claude.ai connectors that a subscription login brings with it. I added both after a test run in which the agent tried to call a Notion connector because one of the design skills told it to.
+- **Its built-in tools are `Read` and `Skill`.** Without exported skills it has no built-in tools at all.
+- **One function decides every tool call.** `permit()` allows the board tools and allows `Read` only for a file inside `~/.blueprint/agent-skills/`, after following symlinks. It refuses everything else, and the chat shows each refusal as a "Blocked" line.
+- **It reads none of your Claude Code setup.** `settingSources: []` skips your settings, hooks, `CLAUDE.md` and permission rules, and auto memory is off. The synced claude.ai skills and plugins are off too. Its working folder is the skills folder, so it never starts in your project.
+
+The chat route is a request that changes data, so the Origin check applies. Another website cannot start the agent and spend your Claude usage.
+
+The design skills are other people's work, so the export copies them into your home folder and never into a repository. It copies only their text. A skill's scripts would be code from someone else's repository running on your machine, and the agent has no way to run them anyway.
+
+Text on the board reaches the model. That includes link titles and descriptions that the server fetched from the web, so a page could carry instructions aimed at the agent. The system prompt tells the agent to treat that text as information. If a page fooled it anyway, the worst it can do is edit the board, which every board tool already allows.
+
+## Why the chat agent runs Claude Code
+
+The chat agent could have been a loop that calls the Anthropic API directly. Running Claude Code through the Agent SDK lets it use the account Claude Code is signed in to, so a person with a Claude subscription needs no API key. It also brings Claude Code's skill loading and session resume. The cost is a 350 MB binary in `node_modules`, and a process that cannot run inside a hosted serverless worker.
+
 ## What Blueprint leaves out
 
 Blueprint has no freehand drawing, no shapes, no layers panel, no accounts and no sharing. The agent does not watch for comments. An artboard changes once for each write, so you see a design arrive in steps and not as it is typed.
