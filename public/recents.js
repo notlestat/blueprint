@@ -1,6 +1,15 @@
-// Recents: every project with a Blueprint board, as cards with a small map of
-// each board. Each project runs its own server on its own port, so opening one
-// moves this tab to that server's address.
+// Boards: every project with a Blueprint board, as cards with a small map of
+// each board, and a form to make a new one. The page opens here. Each project
+// runs its own server on its own port, so opening one moves this tab to that
+// server's address.
+//
+// "#board" at the end of the address means "show the board, not this list".
+// A fresh visit has no "#board", so it lands here; a reload keeps the board.
+
+export const ON_BOARD = '#board';
+const boardAddress = (url) => `${url}/${ON_BOARD}`;
+// Show a home folder as ~, the way people type it.
+const tidy = (p) => p.replace(/^\/(Users|home)\/[^/]+/, '~');
 
 const $ = (id) => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
@@ -53,7 +62,12 @@ export function createRecents({ api, toast }) {
   const box = $('recents');
   const grid = $('recents-grid');
   const opener = $('home-button');
+  const newButton = $('new-board');
+  const form = $('new-board-form');
+  const nameInput = $('new-board-name');
+  const hint = $('new-board-hint');
   let current = null;
+  let boardsDir = '';
 
   function card(p) {
     const li = el('li');
@@ -93,7 +107,7 @@ export function createRecents({ api, toast }) {
       b.classList.add('busy');
       try {
         const { url } = p.url ? p : await api('POST', '/api/recents/open', { root: p.root });
-        location.href = url;
+        location.href = boardAddress(url);
       } catch {
         b.classList.remove('busy');
       }
@@ -181,12 +195,48 @@ export function createRecents({ api, toast }) {
     try {
       const data = await api('GET', '/api/recents');
       current = data.current;
+      boardsDir = data.boardsDir || '';
+      showHint();
       grid.replaceChildren(...data.projects.map(card));
       if (!data.projects.length) grid.replaceChildren(el('li', 'recents-empty', 'No boards yet.'));
     } catch {
       toast('Could not read Recents.');
     }
   }
+
+  // ---- a new board ----
+  function showHint() {
+    const name = nameInput.value.trim().replace(/\s+/g, ' ');
+    hint.textContent = boardsDir ? `Saved in ${tidy(boardsDir)}/${name || 'its name'}` : '';
+  }
+  function showForm(show) {
+    form.hidden = !show;
+    newButton.setAttribute('aria-expanded', String(show));
+    if (show) nameInput.focus();
+    else {
+      nameInput.value = '';
+      showHint();
+      newButton.focus({ preventScroll: true });
+    }
+  }
+  newButton.addEventListener('click', () => showForm(form.hidden));
+  $('new-board-cancel').addEventListener('click', () => showForm(false));
+  nameInput.addEventListener('input', showHint);
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const create = form.querySelector('.create');
+    create.disabled = true;
+    create.textContent = 'Creating…';
+    try {
+      const { url } = await api('POST', '/api/boards', { name: nameInput.value });
+      location.href = boardAddress(url);
+    } catch {
+      // api() has already said why in a message; keep the name so it can be fixed.
+      create.disabled = false;
+      create.textContent = 'Create';
+      nameInput.focus();
+    }
+  });
 
   async function open() {
     box.hidden = false;
@@ -195,10 +245,13 @@ export function createRecents({ api, toast }) {
     focusFirst();
   }
 
+  // Closing shows this board, and marks the address so a reload stays on it.
   function close() {
     box.hidden = true;
+    if (!form.hidden) showForm(false);
     opener.setAttribute('aria-expanded', 'false');
     opener.focus({ preventScroll: true });
+    if (location.hash !== ON_BOARD) history.replaceState(null, '', ON_BOARD);
   }
 
   opener.addEventListener('click', () => (box.hidden ? open() : close()));
@@ -207,9 +260,10 @@ export function createRecents({ api, toast }) {
   box.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       e.stopPropagation();
-      close();
+      if (!form.hidden) showForm(false); // the first Escape closes the form, the next one the list
+      else close();
     } else if (e.key === 'Tab') {
-      const focusable = [...box.querySelectorAll('button:not([disabled])')].filter((b) => b.offsetParent !== null); // skip buttons in closed menus
+      const focusable = [...box.querySelectorAll('button:not([disabled]), input')].filter((b) => b.offsetParent !== null); // skip controls in closed menus and forms
       const first = focusable[0];
       const last = focusable.at(-1);
       if (e.shiftKey && document.activeElement === first) {

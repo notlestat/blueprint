@@ -6,7 +6,7 @@ import { createCanvas } from './canvas.js';
 import { createComments } from './comments.js';
 import { createItems, KIND } from './items.js';
 import { createConnectors } from './connectors.js';
-import { createRecents } from './recents.js';
+import { createRecents, ON_BOARD } from './recents.js';
 import { createChat } from './chat.js';
 import { URL_ONLY, FENCE, isHtml, looksLikeCode, htmlName } from './paste.js';
 
@@ -100,7 +100,11 @@ function bounds() {
 function inset() {
   const panel = $('panel');
   const wide = innerWidth > 720 && !panel.hidden;
-  return { top: 80, left: 40, bottom: wide ? 96 : 96 + panel.offsetHeight, right: wide ? panel.offsetWidth + 40 : 40 };
+  // An open chat covers the left of the screen on a wide window, so framing
+  // keeps clear of it. On a phone the open chat is a sheet over everything.
+  const chatPanel = $('chat');
+  const chatRight = innerWidth > 720 && !chatPanel.classList.contains('closed') ? chatPanel.getBoundingClientRect().right : 0;
+  return { top: 80, left: chatRight + 40, bottom: wide ? 96 : 96 + panel.offsetHeight, right: wide ? panel.offsetWidth + 40 : 40 };
 }
 const fit = (animate = true) => canvas.frameRect(bounds(), { animate, inset: inset() });
 // The middle of the visible board, in board pixels: where pasted things land.
@@ -447,6 +451,62 @@ document.querySelectorAll('.dock [data-tool]').forEach((b) => b.addEventListener
 $('fit').addEventListener('click', () => fit());
 $('zoom').addEventListener('click', () => canvas.zoomAt(innerWidth / 2, innerHeight / 2, 1));
 $('add-image').addEventListener('click', () => $('image-input').click());
+
+// ---- a new, empty artboard from the dock ----
+// The button opens a menu of sizes. Choosing one makes the artboard, frames it
+// and selects it, so Delete takes it away again if it was a mistake.
+const artboardButton = $('add-artboard');
+const artboardMenu = $('artboard-menu');
+const artboardChoices = [...artboardMenu.querySelectorAll('[role="menuitem"]')];
+
+function showArtboardMenu(open) {
+  artboardMenu.hidden = !open;
+  artboardButton.setAttribute('aria-expanded', String(open));
+  if (!open) return;
+  // Above the button, centred on it. The menu is fixed to the screen like the dock.
+  const r = artboardButton.getBoundingClientRect();
+  const half = artboardMenu.offsetWidth / 2;
+  artboardMenu.style.left = `${Math.min(Math.max(r.left + r.width / 2, half + 8), innerWidth - half - 8)}px`;
+  artboardMenu.style.bottom = `${innerHeight - r.top + 8}px`;
+  artboardChoices[0].focus();
+}
+
+// "Desktop", then "Desktop 2", "Desktop 3" and so on.
+function nextName(base) {
+  const taken = new Set(board.artboards.map((a) => a.name));
+  if (!taken.has(base)) return base;
+  let n = 2;
+  while (taken.has(`${base} ${n}`)) n++;
+  return `${base} ${n}`;
+}
+
+async function addArtboard(choice) {
+  showArtboardMenu(false);
+  const { name, width, height } = choice.dataset;
+  const a = await api('POST', '/api/artboards', { name: nextName(name), width: Number(width), height: Number(height) }).catch(() => null);
+  if (!a) return;
+  canvas.frameRect(a, { inset: inset() });
+  select({ kind: 'artboard', id: a.id });
+  artboardButton.focus({ preventScroll: true });
+}
+
+artboardButton.addEventListener('click', () => showArtboardMenu(artboardMenu.hidden));
+for (const choice of artboardChoices) choice.addEventListener('click', () => addArtboard(choice));
+artboardMenu.addEventListener('keydown', (e) => {
+  const i = artboardChoices.indexOf(document.activeElement);
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    artboardChoices[(i + (e.key === 'ArrowDown' ? 1 : -1) + artboardChoices.length) % artboardChoices.length].focus();
+  } else if (e.key === 'Escape') {
+    e.stopPropagation();
+    showArtboardMenu(false);
+    artboardButton.focus({ preventScroll: true });
+  } else if (e.key === 'Tab') showArtboardMenu(false);
+});
+// A click anywhere else closes the menu.
+addEventListener('pointerdown', (e) => {
+  if (!artboardMenu.hidden && !artboardMenu.contains(e.target) && !artboardButton.contains(e.target)) showArtboardMenu(false);
+});
 $('delete-button').addEventListener('click', () => deleteSelection());
 $('image-input').addEventListener('change', (e) => {
   uploadImages(e.target.files, viewCentre());
@@ -744,6 +804,7 @@ function toolKey(key) {
   const tools = { v: 'move', n: 'note', a: 'arrow', c: 'comment', u: 'use' };
   if (tools[key]) setTool(tools[key]);
   else if (key === '1') fit();
+  else if (key === 'f') showArtboardMenu(artboardMenu.hidden);
   else return false;
   return true;
 }
@@ -769,6 +830,9 @@ addEventListener('resize', () => comments.place());
 
 setTool('move');
 canvas.apply();
+// Blueprint opens on the Boards list. An address ending in #board, which
+// opening or closing a board sets, goes straight to the board instead.
+if (location.hash !== ON_BOARD) recents.open();
 
 fetch('/api/health')
   .then((r) => r.json())

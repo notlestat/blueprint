@@ -20,7 +20,7 @@
 </div>
 
 <header class="float title">
-  <button type="button" id="home-button" aria-haspopup="dialog" aria-controls="recents" title="Recents: every project with a board">
+  <button type="button" id="home-button" aria-haspopup="dialog" aria-controls="recents" title="Boards: every board on this computer">
     <i aria-hidden="true"></i><span>Blueprint</span> <span class="dim" id="project"></span>
     <svg class="chev" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 4l2.5 2.5L7.5 4"/></svg>
   </button>
@@ -66,12 +66,20 @@
   <button type="button" data-tool="comment" aria-pressed="false" title="Click an artboard to leave a comment">Comment <kbd>C</kbd></button>
   <button type="button" data-tool="use" aria-pressed="false" title="Click and scroll inside artboards">Use <kbd>U</kbd></button>
   <span class="sep" aria-hidden="true"></span>
+  <button type="button" id="add-artboard" aria-haspopup="menu" aria-expanded="false" aria-controls="artboard-menu" title="Add an empty artboard">Artboard <kbd>F</kbd></button>
   <button type="button" id="add-image" title="Add reference images. You can also paste or drop them.">Image</button>
   <input type="file" id="image-input" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden>
   <span class="sep" aria-hidden="true"></span>
   <button type="button" id="fit" title="Show every artboard">Fit <kbd>1</kbd></button>
   <button type="button" id="zoom" class="zoom" title="Reset zoom to 100%">100%</button>
   <button type="button" id="delete-button" class="delete" title="Delete what is selected. Undo brings it back." hidden>Delete <kbd>⌫</kbd></button>
+</div>
+
+<!-- Sizes for a new artboard. It sits outside the dock so the dock's sideways scroll cannot clip it. -->
+<div class="float artboard-menu" id="artboard-menu" role="menu" aria-label="New artboard size" hidden>
+  <button type="button" role="menuitem" data-name="Desktop" data-width="1440" data-height="900">Desktop <span>1440 × 900</span></button>
+  <button type="button" role="menuitem" data-name="Tablet" data-width="834" data-height="1194">Tablet <span>834 × 1194</span></button>
+  <button type="button" role="menuitem" data-name="Phone" data-width="390" data-height="844">Phone <span>390 × 844</span></button>
 </div>
 
 <!-- One thread card, reused for whichever comment is open. -->
@@ -91,17 +99,32 @@
 
 <div class="float toast" id="toast" role="status" aria-live="polite" hidden><span id="toast-text"></span><button type="button" id="toast-action" hidden></button></div>
 
-<!-- Recents: every project folder that has a Blueprint board. -->
+<!-- Boards: every folder that has a Blueprint board. The page opens here. -->
 <section class="recents" id="recents" role="dialog" aria-modal="true" aria-labelledby="recents-title" hidden>
   <div class="recents-inner">
     <header class="recents-head">
-      <h1 id="recents-title">Recents</h1>
-      <button type="button" class="close" id="recents-close" aria-label="Close Recents">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8"/></svg>
-      </button>
+      <h1 id="recents-title">Boards</h1>
+      <div class="recents-actions">
+        <button type="button" class="new-board" id="new-board" aria-expanded="false" aria-controls="new-board-form">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 1.5v9M1.5 6h9"/></svg>
+          New board
+        </button>
+        <button type="button" class="close" id="recents-close" aria-label="Go to this board">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8"/></svg>
+        </button>
+      </div>
     </header>
+    <form class="new-board-form" id="new-board-form" hidden>
+      <label for="new-board-name">Board name</label>
+      <div class="new-board-row">
+        <input id="new-board-name" name="name" maxlength="60" autocomplete="off" placeholder="Ceramics studio" required>
+        <button type="submit" class="create">Create</button>
+        <button type="button" class="cancel" id="new-board-cancel">Cancel</button>
+      </div>
+      <p class="new-board-hint" id="new-board-hint"></p>
+    </form>
     <ul class="recents-grid" id="recents-grid"></ul>
-    <p class="recents-foot">A project appears here once its board has been opened. Each project keeps its board in its own <code>.blueprint</code> folder.</p>
+    <p class="recents-foot">A project appears here once its board has been opened. Each project keeps its board in its own <code>.blueprint</code> folder. Ten boards can be open at once.</p>
   </div>
 </section>
 

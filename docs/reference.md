@@ -30,9 +30,11 @@
 | Delete the selection | Delete or Backspace, or select **Delete** in the dock |
 | Delete a comment | Open it and select **Delete** |
 | Bring back the last deletion | Cmd+Z, or **Undo** in the message that follows a deletion. Undo for an artboard or a comment works until the server restarts. |
-| Open Recents | Select **Blueprint** at the top left |
-| Delete another project's board, or remove it from Recents | Select **…** on its card in Recents |
-| Close a comment card or Recents, clear the selection, or return to the Move tool | Esc |
+| Add an empty artboard | `F`, or **Artboard** in the dock, then Desktop (1440 × 900), Tablet (834 × 1194) or Phone (390 × 844). The menu takes the arrow keys and Enter. |
+| Open the Boards list | Select **Blueprint** at the top left. Blueprint also opens on it, unless the address ends in `#board`. |
+| Make a new board | **New board** in the Boards list, then a name and **Create** |
+| Delete another project's board, or remove it from the list | Select **…** on its card in the Boards list |
+| Close a comment card or the Boards list, clear the selection, or return to the Move tool | Esc. In the Boards list with the new-board form open, the first Esc closes the form. |
 | Show or hide the chat | Select **Agent** at the top left |
 | Send a chat message | Enter. Shift+Enter starts a new line. |
 | Stop the chat agent | Select the square button where **Send** was |
@@ -73,6 +75,7 @@ A failed tool call returns an error result with a sentence that names the proble
 | `BLUEPRINT_ROOT` | `mcp.mjs` | The project folder. The default is the folder `mcp.mjs` starts in. |
 | `BLUEPRINT_CHROME` | `lib/screenshot.mjs` | The path to a Chrome or Chromium binary |
 | `BLUEPRINT_HOME` | `server.mjs`, `scripts/export-skills.mjs` | The folder that holds `recents.json` and `agent-skills/`. The default is `~/.blueprint`. |
+| `BLUEPRINT_BOARDS` | `server.mjs` | The folder that **New board** makes board folders in. The default is `~/Blueprint`. |
 | `BLUEPRINT_MODEL` | `server.mjs` | The model the chat agent uses. The default is `claude-opus-5-5`. |
 | `BLUEPRINT_AGENT_NAME` | `mcp.mjs` | The name the board shows for the agent. The chat agent sets it to "Blueprint agent". Without it, the name comes from the MCP client. |
 | `ANTHROPIC_API_KEY` | The Claude Agent SDK | An API key for the chat agent. Without it, the chat agent uses the account Claude Code is signed in to. |
@@ -100,7 +103,9 @@ A failed tool call returns an error result with a sentence that names the proble
   agent-skills/         design skills downloaded by `npm run skills`
     manifest.json       the source commits, the lead skills, the copied skills and the skipped skills
     skills/<name>/      the text files of one skill
-  deleted/<name>-<time>/  a board deleted from Recents: the project's whole .blueprint folder
+  deleted/<name>-<time>/  a board deleted from the Boards list: the project's whole .blueprint folder
+
+~/Blueprint/<name>/     a board made with New board, holding only its .blueprint folder
 ```
 
 Agent activity is held in memory and is not saved. A deleted note or reference is not kept in `trash/`. Only the last deletion can be brought back, and only while the page stays open.
@@ -121,7 +126,9 @@ Agent activity is held in memory and is not saved. A deleted note or reference i
 | Note and reference width | 80 to 2,000 pixels |
 | Reference image | 10 MB, PNG, JPEG, GIF or WebP |
 | Link address | 2,000 characters, `http` or `https` only |
-| Projects in Recents | 30 |
+| Projects in the Boards list | 30 |
+| Boards open at once | 10, one server each on ports 4400 to 4409 |
+| Board name from **New board** | 60 characters. No `/ \ : * ? " < > \|`, and no leading dot. |
 | Time before a silent agent is cleared from the board | 90 seconds |
 | Chat message | 8,000 characters |
 | Chat messages kept in `chat.json` | the last 200 |
@@ -149,7 +156,7 @@ The server rejects a value over a limit with HTTP status 400 and a message that 
 | `public/comments.js` | Comment pins and the comment card |
 | `public/items.js` | Notes, images and link cards, and note editing |
 | `public/connectors.js` | Arrows and their labels |
-| `public/recents.js` | The Recents view |
+| `public/recents.js` | The Boards list and the new-board form |
 | `public/chat.js` | The chat panel |
 | `public/styles.css` | All styles and colour tokens |
 | `test/` | Tests for the board store, the server and the MCP tools |

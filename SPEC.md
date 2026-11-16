@@ -243,7 +243,8 @@ New routes:
 | `POST /api/connectors` | `{ from, to, label?, author?, id? }` | the arrow |
 | `PATCH /api/connectors/:id` | `{ label }` | the arrow |
 | `DELETE /api/connectors/:id` | none | the arrow |
-| `GET /api/recents` | none | `{ current, projects }`, each with an outline of its board and its address if running |
+| `GET /api/recents` | none | `{ current, boardsDir, projects }`, each with an outline of its board and its address if running |
+| `POST /api/boards` | `{ name }` | `{ root, url }`, 201. Makes `<BLUEPRINT_BOARDS>/<name>/`, starts its server and adds it to the list. 400 for a bad name, 409 if that board exists. |
 | `POST /api/recents/open` | `{ root }` | `{ url }`. Starts that project's server if needed. |
 | `POST /api/recents/forget` | `{ root }` | `{ ok }` |
 | `POST /api/recents/delete` | `{ root }` | `{ ok, movedTo }`. Stops that board's server, then moves its `.blueprint` folder to `<BLUEPRINT_HOME>/deleted/`. Refuses the open board and folders not in Recents. |
