@@ -395,6 +395,39 @@ ul { list-style: none; margin: 0; padding: 0; }
 .recents-foot code { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
 @media (hover: hover) { .recent:not([disabled]):hover { background: var(--fill); } }
 
+/* ---- New artboard menu: rises from the dock's Artboard button ---- */
+.artboard-menu { transform: translateX(-50%); border-radius: 16px; padding: 5px; display: grid; gap: 2px; min-width: 210px; z-index: 15; }
+.artboard-menu button {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 36px; padding: 0 12px;
+  border-radius: 11px; font-weight: 500; text-align: left; transition: background 120ms ease;
+}
+.artboard-menu button span { color: var(--text-3); font-weight: 400; font-variant-numeric: tabular-nums; font-size: 12.5px; }
+.artboard-menu button:active { background: var(--fill-press); }
+@media (hover: hover) { .artboard-menu button:hover { background: var(--fill); } }
+
+/* ---- Boards: the New board button and its form ---- */
+.recents-actions { display: flex; align-items: center; gap: 10px; }
+.new-board {
+  display: flex; align-items: center; gap: 7px; height: 36px; padding: 0 16px; border-radius: 999px;
+  background: var(--accent); color: var(--on-accent); font-weight: 600; transition: transform 140ms var(--ease-out);
+}
+.new-board:active { transform: scale(0.97); }
+.new-board-form { margin: -8px 0 28px; padding: 16px; border-radius: 18px; background: var(--fill); max-width: 560px; }
+.new-board-form label { display: block; font-size: 12.5px; font-weight: 500; color: var(--text-2); margin-bottom: 8px; }
+.new-board-row { display: flex; gap: 8px; }
+.new-board-row input {
+  flex: 1; min-width: 0; height: 40px; padding: 0 14px; border-radius: 12px; border: 0; font: inherit; font-size: 16px;
+  color: var(--text); background: var(--material-solid); box-shadow: inset 0 0 0 1px var(--hairline); outline: 0;
+}
+@media (min-width: 641px) { .new-board-row input { font-size: 14px; } }
+.new-board-row input:focus { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.new-board-row button { height: 40px; padding: 0 16px; border-radius: 12px; font-weight: 600; flex: none; }
+.new-board-row .create { background: var(--accent); color: var(--on-accent); }
+.new-board-row .create:disabled { opacity: 0.6; }
+.new-board-row .cancel { color: var(--text-2); }
+@media (hover: hover) { .new-board-row .cancel:hover { background: var(--fill); } }
+.new-board-hint { margin: 10px 2px 0; font-size: 12.5px; color: var(--text-3); overflow-wrap: anywhere; }
+
 /* ---- Chat with the design agent ---- */
 .chat {
   left: 16px; top: 64px; bottom: 84px; width: 340px; max-width: calc(100vw - 32px); border-radius: 22px;
@@ -452,7 +485,7 @@ ul { list-style: none; margin: 0; padding: 0; }
   .thread.entering { animation: none; }
   .live::after, .board.busy .ring, .board.arriving { animation: none; }
   .board .ring, .board .tag { transition: none; }
-  .pin, .dock button, .send, .title button, .recent, .more, #chat-toggle, #chat-toggle .chev { transition: none; }
+  .pin, .dock button, .send, .title button, .recent, .more, #chat-toggle, #chat-toggle .chev, .new-board, .artboard-menu button { transition: none; }
   .card-menu { animation: none; }
 }
 @media (prefers-reduced-transparency: reduce) {
@@ -470,4 +503,7 @@ ul { list-style: none; margin: 0; padding: 0; }
   .dock button { padding: 0 9px; }
   .dock .sep { margin: 0 1px; }
   .recents-inner { padding: 56px 16px 32px; }
+  .recents-head { flex-wrap: wrap; gap: 12px; }
+  .new-board-row { flex-wrap: wrap; }
+  .new-board-row input { flex-basis: 100%; }
 }

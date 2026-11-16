@@ -6,7 +6,8 @@
 
 import http from 'node:http';
 import path from 'node:path';
-import { readFile, writeFile, rm } from 'node:fs/promises';
+import { readFile, writeFile, rm, mkdir, access } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { openBoard, BoardError, LIMITS } from './lib/board.mjs';
@@ -27,7 +28,10 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; ch
 const PAGE_CSP = "default-src 'self'; frame-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'";
 
 // `agentQuery` replaces the Agent SDK's query() in tests, so no test calls a model.
-export async function startServer({ root, port, home = defaultHome(), previews = true, agentQuery, skillsDir } = {}) {
+// New boards made from the Boards view get their own folder in here.
+export const defaultBoardsDir = () => process.env.BLUEPRINT_BOARDS || path.join(homedir(), 'Blueprint');
+
+export async function startServer({ root, port, home = defaultHome(), boardsDir = defaultBoardsDir(), previews = true, agentQuery, skillsDir } = {}) {
   root = path.resolve(root || process.cwd());
   const store = await openBoard(root);
   const clients = new Set(); // open event-stream responses
@@ -109,16 +113,41 @@ export async function startServer({ root, port, home = defaultHome(), previews =
     if (target === root) return `http://127.0.0.1:${server.address().port}`;
     const exists = await readFile(path.join(target, '.blueprint', 'board.json')).then(() => true, () => false);
     if (!exists) throw new BoardError('That folder no longer has a Blueprint board.', 404);
+    return startBoardServer(target);
+  }
+
+  // Start the server for another board, or find the one already running, and
+  // return its address. Each board runs as its own process on its own port.
+  async function startBoardServer(target) {
     const already = await runningUrl(target);
     if (already) return already;
-    spawn(process.execPath, [path.join(HERE, 'server.mjs'), '--root', target], { detached: true, stdio: 'ignore', env: { ...process.env, BLUEPRINT_HOME: home } }).unref();
+    spawn(process.execPath, [path.join(HERE, 'server.mjs'), '--root', target], { detached: true, stdio: 'ignore', env: { ...process.env, BLUEPRINT_HOME: home, BLUEPRINT_BOARDS: boardsDir } }).unref();
     const deadline = Date.now() + 5000;
     while (Date.now() < deadline) {
       await new Promise((r) => setTimeout(r, 150));
       const url = await runningUrl(target);
       if (url) return url;
     }
-    throw new BoardError(`The board for ${path.basename(target)} did not start within 5 seconds.`, 500);
+    throw new BoardError(`The board for ${path.basename(target)} did not start within 5 seconds. If ten boards are already open, close one and try again.`, 500);
+  }
+
+  // A new board from the Boards view: a folder named after it inside
+  // boardsDir. The name becomes a folder name, so it may not hold a path
+  // separator or start with a dot, and the result must stay inside boardsDir.
+  async function createBoard(name) {
+    const clean = typeof name === 'string' ? name.trim().replace(/\s+/g, ' ') : '';
+    if (!clean) throw new BoardError('Give the board a name.');
+    if (clean.length > 60) throw new BoardError(`The name is ${clean.length} characters. The limit is 60.`);
+    if (clean.startsWith('.') || /[\/\\:*?"<>|\x00-\x1f]/.test(clean))
+      throw new BoardError('A board name cannot start with a dot or contain / \\ : * ? " < > or |.');
+    const parent = path.resolve(boardsDir);
+    const target = path.join(parent, clean);
+    if (path.dirname(target) !== parent) throw new BoardError('That name is not allowed.');
+    if (await access(path.join(target, '.blueprint')).then(() => true, () => false))
+      throw new BoardError(`A board called "${clean}" already exists. Open it from the list.`, 409);
+    await mkdir(target, { recursive: true });
+    await touchProject(home, target);
+    return { root: target, url: await startBoardServer(target) };
   }
 
   // Delete another project's board from Recents. The same rules as opening
@@ -286,7 +315,9 @@ export async function startServer({ root, port, home = defaultHome(), previews =
           return json(res, 200, await store.deleteConnector(parts[2]));
 
         case 'GET /api/recents':
-          return json(res, 200, { current: root, projects: await listProjects(home) });
+          return json(res, 200, { current: root, boardsDir: path.resolve(boardsDir), projects: await listProjects(home) });
+        case 'POST /api/boards':
+          return json(res, 201, await createBoard((await readJson(req)).name));
         case 'POST /api/recents/:id':
           if (parts[2] === 'open') return json(res, 200, { url: await openProject((await readJson(req)).root) });
           if (parts[2] === 'forget') {

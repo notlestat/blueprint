@@ -7,10 +7,11 @@ import { openBoard, toDocument, LIMITS, BoardError } from '../lib/board.mjs';
 
 const fresh = async () => openBoard(await mkdtemp(path.join(tmpdir(), 'blueprint-')));
 
-test('a new board is empty and makes its folders', async () => {
+test('a new board is empty, makes its folders and writes board.json at once', async () => {
   const b = await fresh();
   assert.deepEqual(b.get(), { version: 1, artboards: [], comments: [], items: [], connectors: [] });
-  assert.deepEqual((await readdir(b.dir)).sort(), ['artboards', 'trash']);
+  assert.deepEqual((await readdir(b.dir)).sort(), ['artboards', 'board.json', 'trash']);
+  assert.deepEqual(JSON.parse(await readFile(path.join(b.dir, 'board.json'), 'utf8')).artboards, []);
 });
 
 test('createArtboard uses defaults, writes both files and places boards in a row', async () => {

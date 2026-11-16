@@ -36,6 +36,8 @@ The chat agent sits in the **Agent** panel on the left of the board. It uses the
 5. To comment, press `C`, then click the part of an artboard you mean. Type your comment and press Enter.
 6. Tell the agent: "Check the board." It reads your comments, edits the HTML and replies on each comment.
 
+To start from an empty artboard, select **Artboard** in the dock or press `F`, then choose Desktop (1440 × 900), Tablet (834 × 1194) or Phone (390 × 844). Ask the agent to design on it by its name, such as "Phone".
+
 While the agent works, the panel lists each step it takes, such as "Wrote Pricing / desktop". To stop it, select the square button. To start a new conversation, select **New**. The board stays as it is.
 
 The agent can use Blueprint's board tools and read its design skills. It cannot run commands, edit project files, or reach the MCP servers and claude.ai connectors you use elsewhere.
@@ -103,13 +105,17 @@ To delete an artboard, a note, a reference or an arrow, select it and press Dele
 
 The agent can add notes, references and arrows too. Each note and reference that the agent adds has a blue **Agent** label above it.
 
-## Switch between boards
+## Start from the Boards list
 
-Select **Blueprint** at the top left to open Recents. Recents lists every project whose board has run on this machine, each with a small map of its board. Select a project to open its board. If that project's server is not running, Blueprint starts it.
+Blueprint opens on **Boards**, a list of every board that has run on this computer, each with a small map. Select a board to open it. If its server is not running, Blueprint starts it. To come back to the list, select **Blueprint** at the top left. An address that ends in `#board` opens the board directly, so a reload keeps you on the board you were working on.
+
+To make a board, select **New board**, type a name and select **Create**. Blueprint makes a folder with that name in `~/Blueprint/` and opens its empty board. To keep new boards in another folder, set the `BLUEPRINT_BOARDS` environment variable. A board for a code project lives in the project's own folder instead: start the server there, or let an outside agent start it.
+
+Each open board runs its own server on a port from 4400 to 4409, so ten boards can be open at once.
 
 To delete another project's board, select **…** on its card, then **Delete board**. Blueprint stops that board's server and moves the project's `.blueprint` folder to `~/.blueprint/deleted/`. The project's own files stay where they are. To get the board back, move the folder back into the project and rename it `.blueprint`. To hide a project without deleting its board, select **Remove from list**. You cannot delete the board you have open.
 
-Recents keeps the folder paths in `~/.blueprint/recents.json`. To keep the list in another folder, set the `BLUEPRINT_HOME` environment variable.
+The list keeps the folder paths in `~/.blueprint/recents.json`. To keep the list in another folder, set the `BLUEPRINT_HOME` environment variable.
 
 ## Watch the agent work
 

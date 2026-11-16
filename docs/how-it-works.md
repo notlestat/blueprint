@@ -62,13 +62,19 @@ When you paste a web address, the server fetches the page to read its title. The
 
 The check runs on the address the lookup returns. A host whose address changes between the lookup and the request can still slip through. For a preview that only reads a page title, I judged that risk acceptable.
 
-## How Recents finds other boards
+## How the Boards list finds other boards
 
-Each project has its own server and its own port, so no single server knows every board. When a server starts, and a second after each edit, it writes its project's folder path to `~/.blueprint/recents.json`. Recents reads that list and opens each project's `board.json` from disk to draw its map. It does not ask the other servers, because the canvas page's security policy only lets it talk to its own server.
+Each project has its own server and its own port, so no single server knows every board. When a server starts, and a second after each edit, it writes its project's folder path to `~/.blueprint/recents.json`. The list reads that file and opens each project's `board.json` from disk to draw its map. It does not ask the other servers, because the canvas page's security policy only lets it talk to its own server.
 
-Deleting a board from Recents moves it instead of erasing it. Blueprint stops the board's server, waits for the process to exit so nothing writes into the folder afterwards, and moves the project's `.blueprint` folder to `~/.blueprint/deleted/`. Only the `.blueprint` folder moves. The board you have open cannot be deleted from inside itself, because its server would still be writing into a folder that had moved. If an agent later calls a Blueprint tool in that project, it starts a fresh, empty board.
+Deleting a board from the list moves it instead of erasing it. Blueprint stops the board's server, waits for the process to exit so nothing writes into the folder afterwards, and moves the project's `.blueprint` folder to `~/.blueprint/deleted/`. Only the `.blueprint` folder moves. The board you have open cannot be deleted from inside itself, because its server would still be writing into a folder that had moved. If an agent later calls a Blueprint tool in that project, it starts a fresh, empty board.
 
-Opening a project from Recents can start that project's server. The server starts one only for a folder already in the list that still holds a board. A request cannot name an arbitrary folder and have a server started there.
+Opening a project from the list can start that project's server. The server starts one only for a folder already in the list that still holds a board. A request cannot name an arbitrary folder and have a server started there.
+
+**New board** is the one route that makes a folder. A web page cannot open a folder picker that hands back a path, so the server picks the place: a folder named after the board inside `~/Blueprint/`. The name is checked before anything is made. It cannot contain a path separator or start with a dot, and the resolved folder must sit directly inside `~/Blueprint/`, so a name like `../Documents` is refused. Like every route that changes data, it answers only requests from the board's own page.
+
+A board writes its `board.json` as soon as it opens, even while empty, so a new board shows in the list and can be reopened before anything is on it.
+
+Blueprint opens on the list because a board is one of many. The address of a board ends in `#board`, which the page sets when you open or close the list, so a reload returns to the board and only a fresh visit shows the list.
 
 ## How the board shows an agent at work
 
