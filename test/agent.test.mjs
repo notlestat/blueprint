@@ -43,7 +43,9 @@ async function setup(script, opts) {
   const skillsDir = path.join(await tmp('home'), 'agent-skills');
   const fake = fakeQuery(script, opts);
   const board = { artboards: [{ id: 'ab_aaaa', name: 'Pricing / desktop' }] };
-  const agent = createAgent({ root, dir, home: path.dirname(skillsDir), skillsDir, getBoard: () => board, query: fake.query });
+  // No real CLI search: these tests must not depend on what this computer has installed.
+  const findCli = async (name) => (name === 'claude' ? opts?.claude ?? null : null);
+  const agent = createAgent({ root, dir, home: path.dirname(skillsDir), skillsDir, getBoard: () => board, query: fake.query, findCli });
   await agent.load();
   return { agent, fake, dir, skillsDir, root };
 }
@@ -236,4 +238,16 @@ test('readSkills ignores a missing or empty manifest', async () => {
   await writeFile(path.join(dir, 'manifest.json'), JSON.stringify({ skills: [] }));
   assert.equal(await readSkills(dir), null);
   assert.match(buildPrompt(null), /No design skills are installed/);
+});
+
+test('the built-in agent runs the installed Claude Code when there is one', async () => {
+  const withCli = await setup(turn(), { claude: '/opt/bin/claude' });
+  withCli.agent.send('Draw');
+  await withCli.agent.idle();
+  assert.equal(withCli.fake.calls[0].options.pathToClaudeCodeExecutable, '/opt/bin/claude');
+
+  const without = await setup(turn());
+  without.agent.send('Draw');
+  await without.agent.idle();
+  assert.equal(without.fake.calls[0].options.pathToClaudeCodeExecutable, undefined, "without one, the SDK uses its own copy");
 });

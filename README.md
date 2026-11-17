@@ -9,7 +9,7 @@ Blueprint runs on your machine and needs no account. Each project keeps its own 
 ## Requirements
 
 - Node.js 22 or later
-- Google Chrome, for the `get_screenshot` tool only
+- Google Chrome, for the `get_screenshot` tool when you run Blueprint from a terminal. The desktop app takes screenshots without it.
 - For the chat agent: Claude Code, installed and signed in, or an Anthropic API key
 - For an outside agent: an agent that speaks MCP over stdio, such as Claude Code or Codex
 
@@ -24,6 +24,30 @@ npm install
 ```
 
 `npm install` downloads about 350 MB. Most of it is the Claude Code binary that the Claude Agent SDK runs for the chat agent.
+
+## Run Blueprint as a desktop app
+
+The desktop app shows the same board in its own window, with a Dock icon and a menu bar. It opens the board you edited last. If you have no boards yet, it makes `~/Blueprint/My first board`.
+
+To run it from your clone, run:
+
+```sh
+npm run app
+```
+
+To build `Blueprint.app`, run:
+
+```sh
+npm run app:build
+```
+
+The app is written to `dist/mac-arm64/Blueprint.app`. Move it to `/Applications` to keep it. The build is about 350 MB. It does not include Claude Code or Codex, so its chat agents need the ones installed on the computer. It is not signed, so it runs on the Mac that built it. To give it to other people, sign and notarize it with an Apple Developer ID.
+
+In the **File** menu, **New Board…** (Cmd+N) opens the New board form. **Boards** (Cmd+Shift+B) opens the Boards list.
+
+The app takes artboard screenshots with its own browser engine, so `get_screenshot` does not need Chrome. Each board server that the app starts gets the address of the app's screenshot service. A board server keeps running after you quit the app, and then takes screenshots with Chrome again.
+
+Links on the board open in your default browser. The window shows Blueprint's own pages and nothing else.
 
 ## Design in the chat
 
@@ -40,11 +64,37 @@ To start from an empty artboard, select **Artboard** in the dock or press `F`, t
 
 While the agent works, the panel lists each step it takes, such as "Wrote Pricing / desktop". To stop it, select the square button. To start a new conversation, select **New**. The board stays as it is.
 
-The agent can use Blueprint's board tools and read its design skills. It cannot run commands, edit project files, or reach the MCP servers and claude.ai connectors you use elsewhere.
+### Choose the agent
 
-The agent runs Claude Code through the Claude Agent SDK, with the account that Claude Code is signed in to on this machine. To use an API key instead, set `ANTHROPIC_API_KEY` before you start the server. Anthropic does not let products made for other people offer a claude.ai login without its approval. If you build something on Blueprint for other people, give it an API key.
+The menu at the top of the **Agent** panel chooses which agent the chat uses:
 
-The agent uses Claude Opus 5.5. To choose another model, set `BLUEPRINT_MODEL` to its model id before you start the server.
+- **Built-in** is Blueprint's own design agent. It can use the board tools and read its design skills. It cannot run commands, edit project files, or reach the MCP servers and claude.ai connectors you use elsewhere.
+- **Claude Code** and **Codex** are your own agents, as you have set them up, with your skills, MCP servers and sign-in. The menu shows "(not found)" for an agent that is not installed.
+
+When you switch agents, the chat keeps its messages and the new agent starts a new conversation.
+
+Your own agent uses the board tools without asking. Before it does anything else, such as run a command, edit a file or call another MCP server, the chat shows what it wants to do with its choices, such as **Yes** and **No**. The agent waits for your answer. Commands that your agent treats as safe, such as `ls`, run without asking, and the chat lists them as steps. Your agent works in the project folder, so it can change the project's files when you allow it.
+
+Each message to your own agent includes your agent's full setup: its instructions, skills and MCP tools. With many of those, each message costs more than a message to the built-in agent.
+
+Blueprint looks for `claude` and `codex` on your `PATH` and in the folders they usually install into, such as `~/.local/bin` and `/opt/homebrew/bin`. If Blueprint cannot find one, set `BLUEPRINT_CLAUDE` or `BLUEPRINT_CODEX` to the program's path before you start the server.
+
+### Sign in to your agents
+
+To sign Claude Code or Codex in or out, select **Accounts** at the top of the **Agent** panel. Each agent shows whether it is signed in, and as whom.
+
+- Claude Code signs in with a Claude subscription or with the Anthropic Console (API billing). Both open your browser.
+- Codex signs in with a ChatGPT account, which opens your browser, or with an OpenAI API key that you paste.
+
+If the browser does not open, select **Open the sign-in page**.
+
+Blueprint signs in through each agent's own CLI and keeps no password, token or key. A pasted API key goes straight to `codex login`. So signing in or out in Blueprint does the same in your terminal. Your skills, MCP servers and settings are files on your computer, and a sign-in does not change them. Connectors that come with a claude.ai account, such as the claude.ai Notion connector, follow the account you sign in with.
+
+### Sign-in and model
+
+Each agent uses the account its own CLI is signed in to on this computer. The built-in agent runs Claude Code through the Claude Agent SDK, with the installed `claude` when Blueprint finds it. To use an API key instead, set `ANTHROPIC_API_KEY` before you start the server. Anthropic does not let products made for other people offer a claude.ai login without its approval. If you build something on Blueprint for other people, give it an API key.
+
+The built-in agent uses Claude Opus 5.5. To choose another model, set `BLUEPRINT_MODEL` to its model id before you start the server.
 
 ## Give the agent design skills
 

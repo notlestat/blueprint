@@ -12,6 +12,7 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { openBoard, BoardError, LIMITS } from './lib/board.mjs';
 import { screenshot } from './lib/screenshot.mjs';
+import { nodeEnv } from './lib/node-env.mjs';
 import { IMAGE_TYPES } from './lib/assets.mjs';
 import { fetchPreview } from './lib/preview.mjs';
 import { createAgent, DEFAULT_MODEL } from './lib/agent.mjs';
@@ -121,7 +122,7 @@ export async function startServer({ root, port, home = defaultHome(), boardsDir 
   async function startBoardServer(target) {
     const already = await runningUrl(target);
     if (already) return already;
-    spawn(process.execPath, [path.join(HERE, 'server.mjs'), '--root', target], { detached: true, stdio: 'ignore', env: { ...process.env, BLUEPRINT_HOME: home, BLUEPRINT_BOARDS: boardsDir } }).unref();
+    spawn(process.execPath, [path.join(HERE, 'server.mjs'), '--root', target], { detached: true, stdio: 'ignore', env: nodeEnv({ ...process.env, BLUEPRINT_HOME: home, BLUEPRINT_BOARDS: boardsDir }) }).unref();
     const deadline = Date.now() + 5000;
     while (Date.now() < deadline) {
       await new Promise((r) => setTimeout(r, 150));
@@ -262,7 +263,24 @@ export async function startServer({ root, port, home = defaultHome(), boardsDir 
         case 'POST /api/chat/:id':
           if (parts[2] === 'stop') return json(res, 200, agent.stop());
           if (parts[2] === 'clear') return json(res, 200, await agent.clear());
+          if (parts[2] === 'agent') return json(res, 200, await agent.setAgent((await readJson(req)).agent));
+          if (parts[2] === 'permission') {
+            const { id, optionId = null } = await readJson(req);
+            return json(res, 200, agent.answer(id, optionId));
+          }
           break;
+        // Sign-in for the user's own agents. A pasted API key goes straight
+        // to the agent's CLI and is never stored or logged here.
+        case 'GET /api/accounts':
+          return json(res, 200, await agent.refreshAccounts());
+        case 'POST /api/accounts/:id/login': {
+          const { method, key } = await readJson(req);
+          return json(res, 202, agent.signIn(parts[2], method, key));
+        }
+        case 'POST /api/accounts/:id/cancel':
+          return json(res, 200, agent.cancelSignIn(parts[2]));
+        case 'POST /api/accounts/:id/logout':
+          return json(res, 200, await agent.signOut(parts[2]));
         case 'POST /api/artboards':
           return json(res, 201, await store.createArtboard(await readJson(req)));
         case 'PATCH /api/artboards/:id':

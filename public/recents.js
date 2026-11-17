@@ -7,6 +7,8 @@
 // A fresh visit has no "#board", so it lands here; a reload keeps the board.
 
 export const ON_BOARD = '#board';
+const BOARDS = '#boards';
+const NEW_BOARD = '#new';
 const boardAddress = (url) => `${url}/${ON_BOARD}`;
 // Show a home folder as ~, the way people type it.
 const tidy = (p) => p.replace(/^\/(Users|home)\/[^/]+/, '~');
@@ -239,11 +241,21 @@ export function createRecents({ api, toast }) {
   });
 
   async function open() {
+    const wantsForm = location.hash === NEW_BOARD;
     box.hidden = false;
     opener.setAttribute('aria-expanded', 'true');
     await load();
-    focusFirst();
+    if (wantsForm) showForm(true);
+    else focusFirst();
   }
+
+  // The desktop app's File menu sets #boards or #new to show this list or its
+  // form. The hash is cleared once the list is open, so choosing the same
+  // item again works.
+  addEventListener('hashchange', () => {
+    if (location.hash !== BOARDS && location.hash !== NEW_BOARD) return;
+    open().finally(() => history.replaceState(null, '', location.pathname));
+  });
 
   // Closing shows this board, and marks the address so a reload stays on it.
   function close() {

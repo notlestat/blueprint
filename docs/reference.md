@@ -74,9 +74,12 @@ A failed tool call returns an error result with a sentence that names the proble
 | --- | --- | --- |
 | `BLUEPRINT_ROOT` | `mcp.mjs` | The project folder. The default is the folder `mcp.mjs` starts in. |
 | `BLUEPRINT_CHROME` | `lib/screenshot.mjs` | The path to a Chrome or Chromium binary |
+| `BLUEPRINT_CAPTURE` | `lib/screenshot.mjs` | The address of the desktop app's screenshot service. The app sets it for the board servers it starts. Without it, or when the app does not answer, screenshots use Chrome. |
 | `BLUEPRINT_HOME` | `server.mjs`, `scripts/export-skills.mjs` | The folder that holds `recents.json` and `agent-skills/`. The default is `~/.blueprint`. |
 | `BLUEPRINT_BOARDS` | `server.mjs` | The folder that **New board** makes board folders in. The default is `~/Blueprint`. |
-| `BLUEPRINT_MODEL` | `server.mjs` | The model the chat agent uses. The default is `claude-opus-5-5`. |
+| `BLUEPRINT_MODEL` | `server.mjs` | The model the built-in chat agent uses. The default is `claude-opus-5-5`. |
+| `BLUEPRINT_CLAUDE` | `lib/agent.mjs` | The path to the `claude` program, when Blueprint cannot find it |
+| `BLUEPRINT_CODEX` | `lib/agent.mjs` | The path to the `codex` program, when Blueprint cannot find it |
 | `BLUEPRINT_AGENT_NAME` | `mcp.mjs` | The name the board shows for the agent. The chat agent sets it to "Blueprint agent". Without it, the name comes from the MCP client. |
 | `ANTHROPIC_API_KEY` | The Claude Agent SDK | An API key for the chat agent. Without it, the chat agent uses the account Claude Code is signed in to. |
 
@@ -96,7 +99,7 @@ A failed tool call returns an error result with a sentence that names the proble
   assets/<hash>.<ext>   reference images, named by a hash of their content
   trash/                HTML of deleted artboards
   server.json           port and process id of the running server
-  chat.json             the chat agent's messages and its Claude Code session id
+  chat.json             the chat's messages, the chosen agent, and the built-in agent's session id
 
 ~/.blueprint/
   recents.json          the folder path and last edit time of each project, for Recents
@@ -143,11 +146,17 @@ The server rejects a value over a limit with HTTP status 400 and a message that 
 | --- | --- |
 | `server.mjs` | The HTTP server: canvas page, JSON API, event stream, artboard documents |
 | `lib/board.mjs` | Loads, checks and saves the board |
-| `lib/screenshot.mjs` | Captures an artboard with headless Chrome |
+| `lib/screenshot.mjs` | Captures an artboard with the desktop app's screenshot service, or with headless Chrome |
+| `lib/node-env.mjs` | Adds `ELECTRON_RUN_AS_NODE` to the environment of `server.mjs` and `mcp.mjs` when the desktop app starts them |
+| `desktop/main.mjs` | The desktop app: starts the board server, opens the window and builds the menu |
+| `desktop/capture.mjs` | The desktop app's screenshot service, which renders artboards in a hidden window |
 | `lib/assets.mjs` | Reads an image's type and size from its first bytes |
 | `lib/preview.mjs` | Fetches a link's title and description, and refuses local addresses |
 | `lib/recents.mjs` | Reads and writes `recents.json`, and outlines each board for Recents |
-| `lib/agent.mjs` | The chat agent: runs Claude Code with the board tools and the design skills, decides what it may use, and keeps the chat |
+| `lib/agent.mjs` | The chat: runs the built-in agent or the user's own agent, decides what each may use, and keeps the chat |
+| `lib/acp.mjs` | Runs the user's Claude Code or Codex over the Agent Client Protocol, with the board tools attached |
+| `lib/accounts.mjs` | Reads, starts and ends each agent's sign-in through its own CLI |
+| `lib/find-cli.mjs` | Finds the `claude` and `codex` programs on `PATH` and in the usual install folders |
 | `scripts/export-skills.mjs` | Downloads design skills from GitHub and copies their text into `~/.blueprint/agent-skills/` |
 | `skills.config.json` | The repositories, skill folders, `when` notes and lead skills that `npm run skills` downloads |
 | `mcp.mjs` | The MCP server |

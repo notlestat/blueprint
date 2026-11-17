@@ -447,7 +447,16 @@ ul { list-style: none; margin: 0; padding: 0; }
 .chat.busy #chat-toggle .live { display: block; }
 .chat-clear { margin-left: auto; flex: none; font-size: 12.5px; font-weight: 500; color: var(--accent); padding: 5px 8px; border-radius: 999px; }
 .chat-clear:disabled { color: var(--text-3); }
-.chat.closed .chat-clear, .chat.closed .chat-body { display: none; }
+.chat.closed .chat-clear, .chat.closed .chat-body, .chat.closed .chat-agent { display: none; }
+.chat-agent { margin-left: auto; min-width: 0; max-width: 140px; font: inherit; font-size: 12.5px; color: var(--text-2); background: var(--fill); border: 0; border-radius: 999px; padding: 4px 8px; }
+.chat-agent:disabled { opacity: 0.6; }
+.chat-agent + .chat-clear { margin-left: 0; }
+.chat-ask { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 12px; background: var(--fill); box-shadow: inset 0 0 0 1px var(--edge); font-size: 13px; line-height: 1.4; white-space: normal; }
+.chat-ask p { margin: 0; }
+.chat-ask pre { margin: 0; max-height: 120px; overflow: auto; font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--fill-press); border-radius: 6px; padding: 6px 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.chat-ask .choices { display: flex; flex-wrap: wrap; gap: 6px; }
+.chat-ask .choices button { font-size: 12.5px; font-weight: 500; padding: 5px 10px; border-radius: 999px; background: var(--accent); color: var(--on-accent); }
+.chat-ask .choices button.refuse { background: var(--fill-press); color: var(--text); }
 @media (hover: hover) { #chat-toggle:hover, .chat-clear:not(:disabled):hover { background: var(--fill); } }
 
 .chat-body { display: flex; flex-direction: column; flex: 1; min-height: 0; }
@@ -507,3 +516,27 @@ ul { list-style: none; margin: 0; padding: 0; }
   .new-board-row { flex-wrap: wrap; }
   .new-board-row input { flex-basis: 100%; }
 }
+
+/* ---- Accounts ---- */
+.chat.closed #accounts-open { display: none; }
+.accounts { width: min(440px, calc(100vw - 32px)); max-height: calc(100vh - 64px); padding: 0; border: 0; border-radius: 16px; background: var(--material-solid); color: var(--text); box-shadow: var(--shadow-float); }
+.accounts::backdrop { background: rgba(0, 0, 0, 0.35); }
+.accounts-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 4px 20px; }
+.accounts-head h2 { margin: 0; font-size: 17px; font-weight: 600; }
+.accounts-head .close { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: var(--text-2); background: var(--fill); }
+.accounts-intro { margin: 0; padding: 0 20px 12px; font-size: 13px; line-height: 1.45; color: var(--text-2); }
+.accounts-list { list-style: none; margin: 0; padding: 0 12px 12px; display: flex; flex-direction: column; gap: 8px; }
+.account { padding: 12px; border-radius: 12px; background: var(--fill); display: flex; flex-direction: column; gap: 6px; font-size: 13px; line-height: 1.4; }
+.account p { margin: 0; overflow-wrap: anywhere; }
+.account-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.account-state { font-size: 11.5px; font-weight: 500; color: var(--text-2); padding: 2px 8px; border-radius: 999px; background: var(--fill-press); }
+.account-state.on { color: var(--on-accent); background: var(--accent); }
+.account-status { color: var(--text); }
+.account-note { color: var(--text-3); font-size: 12px; }
+.account-error { color: var(--danger); font-size: 12.5px; }
+.account-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.account-actions button, .account-link, .account-key button { font-size: 12.5px; font-weight: 500; padding: 6px 11px; border-radius: 999px; background: var(--accent); color: var(--on-accent); text-decoration: none; }
+.account-actions button.quiet, .account-key button.quiet { background: var(--fill-press); color: var(--text); }
+.account-key { display: flex; gap: 6px; align-items: center; }
+.account-key input { flex: 1; min-width: 0; font: inherit; font-size: 13px; color: var(--text); background: var(--material-solid); border: 0; border-radius: 8px; padding: 6px 9px; box-shadow: inset 0 0 0 1px var(--edge); }
+.account-key input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }

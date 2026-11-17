@@ -8,6 +8,7 @@ import { createItems, KIND } from './items.js';
 import { createConnectors } from './connectors.js';
 import { createRecents, ON_BOARD } from './recents.js';
 import { createChat } from './chat.js';
+import { createAccounts } from './accounts.js';
 import { URL_ONLY, FENCE, isHtml, looksLikeCode, htmlName } from './paste.js';
 
 const $ = (id) => document.getElementById(id);
@@ -860,7 +861,12 @@ events.addEventListener('board', (e) => {
   }
 });
 const chat = createChat({ api });
-events.addEventListener('chat', (e) => chat.update(JSON.parse(e.data)));
+const accounts = createAccounts({ api });
+events.addEventListener('chat', (e) => {
+  const state = JSON.parse(e.data);
+  chat.update(state);
+  accounts.update(state);
+});
 events.addEventListener('activity', (e) => {
   agents = JSON.parse(e.data);
   renderAgents();
