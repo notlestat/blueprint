@@ -79,6 +79,17 @@ Each message to your own agent includes your agent's full setup: its instruction
 
 Blueprint looks for `claude` and `codex` on your `PATH` and in the folders they usually install into, such as `~/.local/bin` and `/opt/homebrew/bin`. If Blueprint cannot find one, set `BLUEPRINT_CLAUDE` or `BLUEPRINT_CODEX` to the program's path before you start the server.
 
+### Sign in to your agents
+
+To sign Claude Code or Codex in or out, select **Accounts** at the top of the **Agent** panel. Each agent shows whether it is signed in, and as whom.
+
+- Claude Code signs in with a Claude subscription or with the Anthropic Console (API billing). Both open your browser.
+- Codex signs in with a ChatGPT account, which opens your browser, or with an OpenAI API key that you paste.
+
+If the browser does not open, select **Open the sign-in page**.
+
+Blueprint signs in through each agent's own CLI and keeps no password, token or key. A pasted API key goes straight to `codex login`. So signing in or out in Blueprint does the same in your terminal. Your skills, MCP servers and settings are files on your computer, and a sign-in does not change them. Connectors that come with a claude.ai account, such as the claude.ai Notion connector, follow the account you sign in with.
+
 ### Sign-in and model
 
 Each agent uses the account its own CLI is signed in to on this computer. The built-in agent runs Claude Code through the Claude Agent SDK, with the installed `claude` when Blueprint finds it. To use an API key instead, set `ANTHROPIC_API_KEY` before you start the server. Anthropic does not let products made for other people offer a claude.ai login without its approval. If you build something on Blueprint for other people, give it an API key.

@@ -269,6 +269,18 @@ export async function startServer({ root, port, home = defaultHome(), boardsDir 
             return json(res, 200, agent.answer(id, optionId));
           }
           break;
+        // Sign-in for the user's own agents. A pasted API key goes straight
+        // to the agent's CLI and is never stored or logged here.
+        case 'GET /api/accounts':
+          return json(res, 200, await agent.refreshAccounts());
+        case 'POST /api/accounts/:id/login': {
+          const { method, key } = await readJson(req);
+          return json(res, 202, agent.signIn(parts[2], method, key));
+        }
+        case 'POST /api/accounts/:id/cancel':
+          return json(res, 200, agent.cancelSignIn(parts[2]));
+        case 'POST /api/accounts/:id/logout':
+          return json(res, 200, await agent.signOut(parts[2]));
         case 'POST /api/artboards':
           return json(res, 201, await store.createArtboard(await readJson(req)));
         case 'PATCH /api/artboards/:id':

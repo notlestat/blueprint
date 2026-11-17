@@ -155,6 +155,7 @@ The server rejects a value over a limit with HTTP status 400 and a message that 
 | `lib/recents.mjs` | Reads and writes `recents.json`, and outlines each board for Recents |
 | `lib/agent.mjs` | The chat: runs the built-in agent or the user's own agent, decides what each may use, and keeps the chat |
 | `lib/acp.mjs` | Runs the user's Claude Code or Codex over the Agent Client Protocol, with the board tools attached |
+| `lib/accounts.mjs` | Reads, starts and ends each agent's sign-in through its own CLI |
 | `lib/find-cli.mjs` | Finds the `claude` and `codex` programs on `PATH` and in the usual install folders |
 | `scripts/export-skills.mjs` | Downloads design skills from GitHub and copies their text into `~/.blueprint/agent-skills/` |
 | `skills.config.json` | The repositories, skill folders, `when` notes and lead skills that `npm run skills` downloads |

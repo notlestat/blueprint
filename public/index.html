@@ -29,6 +29,18 @@
 <!-- Shows what each agent is doing. Selecting it jumps to the artboard being worked on. -->
 <div class="float agents" id="agents" role="status" aria-live="polite" hidden></div>
 
+<!-- Sign-in for the user's own agents. -->
+<dialog class="accounts" id="accounts" aria-labelledby="accounts-title">
+  <header class="accounts-head">
+    <h2 id="accounts-title">Accounts</h2>
+    <button type="button" class="close" id="accounts-close" aria-label="Close">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6"/></svg>
+    </button>
+  </header>
+  <p class="accounts-intro">Your agents keep their own sign-in, skills and MCP servers. Signing in or out here does the same in your terminal.</p>
+  <ul class="accounts-list" id="accounts-list"></ul>
+</dialog>
+
 <!-- The chat with the design agent: Blueprint's own, or the user's Claude Code or Codex. -->
 <section class="float chat" id="chat" aria-labelledby="chat-toggle">
   <header class="chat-head">
@@ -37,6 +49,7 @@
       <svg class="chev" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 4l2.5 2.5L7.5 4"/></svg>
     </button>
     <select id="chat-agent" class="chat-agent" aria-label="Agent for this chat" title="Which agent the chat uses"></select>
+    <button type="button" id="accounts-open" class="chat-clear" title="Sign in to Claude Code and Codex">Accounts</button>
     <button type="button" id="chat-clear" class="chat-clear" title="Start a new conversation">New</button>
   </header>
   <div class="chat-body" id="chat-body">
