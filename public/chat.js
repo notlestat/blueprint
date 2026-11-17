@@ -1,5 +1,7 @@
-// The chat with Blueprint's design agent. The server owns the conversation and
-// pushes it on the event stream; this file draws it and sends what you type.
+// The chat with the design agent: Blueprint's own, or the user's Claude Code
+// or Codex. The server owns the conversation and pushes it on the event
+// stream; this file draws it, sends what you type, switches the agent and
+// answers the agent's permission requests.
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, className, text) => {
@@ -66,7 +68,8 @@ export function createChat({ api }) {
   const input = $('chat-input');
   const send = $('chat-send');
   const clear = $('chat-clear');
-  let chat = { busy: false, skills: [], messages: [] };
+  const picker = $('chat-agent');
+  let chat = { busy: false, skills: [], messages: [], agent: 'builtin', agents: [], pending: null };
 
   const nearEnd = () => log.scrollHeight - log.scrollTop - log.clientHeight < 48;
   const scrollToEnd = () => (log.scrollTop = log.scrollHeight);
@@ -95,6 +98,8 @@ export function createChat({ api }) {
       const hint = el('li', 'chat-hint');
       hint.append(el('p', '', 'Ask for a design, for example “Mock up a pricing page at desktop and phone sizes from my references.”'));
       hint.append(el('p', '', 'Pin comments on an artboard, then say “check the board”.'));
+      const own = chat.agents.find((a) => a.id === chat.agent && a.id !== 'builtin');
+      if (own) hint.append(el('p', '', `${own.name} runs with your own skills and connections. It asks here before it uses anything other than the board.`));
       log.append(hint);
     }
     for (const m of chat.messages) {
@@ -104,7 +109,8 @@ export function createChat({ api }) {
       else li.textContent = m.text;
       log.append(li);
     }
-    if (chat.busy) {
+    if (chat.pending) log.append(askCard(chat.pending));
+    if (chat.busy && !chat.pending) {
       const li = el('li', 'chat-msg working');
       li.append(el('span', 'live'), el('span', '', 'Working'));
       log.append(li);
@@ -113,8 +119,60 @@ export function createChat({ api }) {
     send.setAttribute('aria-label', chat.busy ? 'Stop the agent' : 'Send');
     send.title = chat.busy ? 'Stop' : 'Send';
     clear.disabled = chat.busy || !chat.messages.length;
-    if (follow) scrollToEnd();
+    drawPicker();
+    if (follow || chat.pending) scrollToEnd();
   }
+
+  // ---- the agent's permission request ----
+  // The agent's own wording is shown as text, and its options become buttons.
+  function askCard(p) {
+    const li = el('li', 'chat-msg chat-ask');
+    li.setAttribute('role', 'group');
+    li.setAttribute('aria-label', `${p.agent} asks for permission`);
+    const line = el('p', '', `${p.agent} asks to use `);
+    line.append(el('strong', '', p.title));
+    li.append(line);
+    if (p.detail && p.detail !== p.title) li.append(el('pre', '', p.detail));
+    const choices = el('div', 'choices');
+    for (const o of p.options) {
+      const b = el('button', o.kind.startsWith('reject') ? 'refuse' : '', o.name);
+      b.type = 'button';
+      b.addEventListener('click', () => {
+        for (const x of choices.querySelectorAll('button')) x.disabled = true;
+        api('POST', '/api/chat/permission', { id: p.id, optionId: o.id }).catch(() => {});
+      });
+      choices.append(b);
+    }
+    li.append(choices);
+    return li;
+  }
+
+  // ---- which agent ----
+  function drawPicker() {
+    const key = JSON.stringify([chat.agent, chat.agents]);
+    if (picker.dataset.key !== key) {
+      picker.dataset.key = key;
+      picker.replaceChildren(
+        ...chat.agents.map((a) => {
+          const option = el('option', '', a.available ? a.name : `${a.name} (not found)`);
+          option.value = a.id;
+          option.disabled = !a.available;
+          return option;
+        }),
+      );
+      picker.value = chat.agent;
+    }
+    picker.hidden = chat.agents.length < 2;
+    picker.disabled = chat.busy;
+  }
+  picker.addEventListener('change', async () => {
+    try {
+      chat = await api('POST', '/api/chat/agent', { agent: picker.value });
+    } catch {
+      picker.value = chat.agent; // api() has said why
+    }
+    render();
+  });
 
   // ---- typing and sending ----
   // The box grows with what you type, up to about six lines.

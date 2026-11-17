@@ -29,13 +29,14 @@
 <!-- Shows what each agent is doing. Selecting it jumps to the artboard being worked on. -->
 <div class="float agents" id="agents" role="status" aria-live="polite" hidden></div>
 
-<!-- The chat with Blueprint's own design agent. -->
+<!-- The chat with the design agent: Blueprint's own, or the user's Claude Code or Codex. -->
 <section class="float chat" id="chat" aria-labelledby="chat-toggle">
   <header class="chat-head">
     <button type="button" id="chat-toggle" aria-expanded="true" aria-controls="chat-body" title="Show or hide the chat">
       <span class="live" aria-hidden="true"></span><span>Agent</span>
       <svg class="chev" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 4l2.5 2.5L7.5 4"/></svg>
     </button>
+    <select id="chat-agent" class="chat-agent" aria-label="Agent for this chat" title="Which agent the chat uses"></select>
     <button type="button" id="chat-clear" class="chat-clear" title="Start a new conversation">New</button>
   </header>
   <div class="chat-body" id="chat-body">

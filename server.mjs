@@ -263,6 +263,11 @@ export async function startServer({ root, port, home = defaultHome(), boardsDir 
         case 'POST /api/chat/:id':
           if (parts[2] === 'stop') return json(res, 200, agent.stop());
           if (parts[2] === 'clear') return json(res, 200, await agent.clear());
+          if (parts[2] === 'agent') return json(res, 200, await agent.setAgent((await readJson(req)).agent));
+          if (parts[2] === 'permission') {
+            const { id, optionId = null } = await readJson(req);
+            return json(res, 200, agent.answer(id, optionId));
+          }
           break;
         case 'POST /api/artboards':
           return json(res, 201, await store.createArtboard(await readJson(req)));
