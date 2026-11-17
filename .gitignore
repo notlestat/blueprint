@@ -1,3 +1,4 @@
 node_modules/
 .blueprint/server.json
 .DS_Store
+dist/

@@ -74,6 +74,7 @@ A failed tool call returns an error result with a sentence that names the proble
 | --- | --- | --- |
 | `BLUEPRINT_ROOT` | `mcp.mjs` | The project folder. The default is the folder `mcp.mjs` starts in. |
 | `BLUEPRINT_CHROME` | `lib/screenshot.mjs` | The path to a Chrome or Chromium binary |
+| `BLUEPRINT_CAPTURE` | `lib/screenshot.mjs` | The address of the desktop app's screenshot service. The app sets it for the board servers it starts. Without it, or when the app does not answer, screenshots use Chrome. |
 | `BLUEPRINT_HOME` | `server.mjs`, `scripts/export-skills.mjs` | The folder that holds `recents.json` and `agent-skills/`. The default is `~/.blueprint`. |
 | `BLUEPRINT_BOARDS` | `server.mjs` | The folder that **New board** makes board folders in. The default is `~/Blueprint`. |
 | `BLUEPRINT_MODEL` | `server.mjs` | The model the chat agent uses. The default is `claude-opus-5-5`. |
@@ -143,7 +144,10 @@ The server rejects a value over a limit with HTTP status 400 and a message that 
 | --- | --- |
 | `server.mjs` | The HTTP server: canvas page, JSON API, event stream, artboard documents |
 | `lib/board.mjs` | Loads, checks and saves the board |
-| `lib/screenshot.mjs` | Captures an artboard with headless Chrome |
+| `lib/screenshot.mjs` | Captures an artboard with the desktop app's screenshot service, or with headless Chrome |
+| `lib/node-env.mjs` | Adds `ELECTRON_RUN_AS_NODE` to the environment of `server.mjs` and `mcp.mjs` when the desktop app starts them |
+| `desktop/main.mjs` | The desktop app: starts the board server, opens the window and builds the menu |
+| `desktop/capture.mjs` | The desktop app's screenshot service, which renders artboards in a hidden window |
 | `lib/assets.mjs` | Reads an image's type and size from its first bytes |
 | `lib/preview.mjs` | Fetches a link's title and description, and refuses local addresses |
 | `lib/recents.mjs` | Reads and writes `recents.json`, and outlines each board for Recents |

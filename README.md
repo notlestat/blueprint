@@ -9,7 +9,7 @@ Blueprint runs on your machine and needs no account. Each project keeps its own 
 ## Requirements
 
 - Node.js 22 or later
-- Google Chrome, for the `get_screenshot` tool only
+- Google Chrome, for the `get_screenshot` tool when you run Blueprint from a terminal. The desktop app takes screenshots without it.
 - For the chat agent: Claude Code, installed and signed in, or an Anthropic API key
 - For an outside agent: an agent that speaks MCP over stdio, such as Claude Code or Codex
 
@@ -24,6 +24,30 @@ npm install
 ```
 
 `npm install` downloads about 350 MB. Most of it is the Claude Code binary that the Claude Agent SDK runs for the chat agent.
+
+## Run Blueprint as a desktop app
+
+The desktop app shows the same board in its own window, with a Dock icon and a menu bar. It opens the board you edited last. If you have no boards yet, it makes `~/Blueprint/My first board`.
+
+To run it from your clone, run:
+
+```sh
+npm run app
+```
+
+To build `Blueprint.app`, run:
+
+```sh
+npm run app:build
+```
+
+The app is written to `dist/mac-arm64/Blueprint.app`. Move it to `/Applications` to keep it. The build is about 670 MB, because it includes the Claude Code binary for the chat agent. It is not signed, so it runs on the Mac that built it. To give it to other people, sign and notarize it with an Apple Developer ID.
+
+In the **File** menu, **New Board…** (Cmd+N) opens the New board form. **Boards** (Cmd+Shift+B) opens the Boards list.
+
+The app takes artboard screenshots with its own browser engine, so `get_screenshot` does not need Chrome. Each board server that the app starts gets the address of the app's screenshot service. A board server keeps running after you quit the app, and then takes screenshots with Chrome again.
+
+Links on the board open in your default browser. The window shows Blueprint's own pages and nothing else.
 
 ## Design in the chat
 

@@ -12,6 +12,7 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { openBoard, BoardError, LIMITS } from './lib/board.mjs';
 import { screenshot } from './lib/screenshot.mjs';
+import { nodeEnv } from './lib/node-env.mjs';
 import { IMAGE_TYPES } from './lib/assets.mjs';
 import { fetchPreview } from './lib/preview.mjs';
 import { createAgent, DEFAULT_MODEL } from './lib/agent.mjs';
@@ -121,7 +122,7 @@ export async function startServer({ root, port, home = defaultHome(), boardsDir 
   async function startBoardServer(target) {
     const already = await runningUrl(target);
     if (already) return already;
-    spawn(process.execPath, [path.join(HERE, 'server.mjs'), '--root', target], { detached: true, stdio: 'ignore', env: { ...process.env, BLUEPRINT_HOME: home, BLUEPRINT_BOARDS: boardsDir } }).unref();
+    spawn(process.execPath, [path.join(HERE, 'server.mjs'), '--root', target], { detached: true, stdio: 'ignore', env: nodeEnv({ ...process.env, BLUEPRINT_HOME: home, BLUEPRINT_BOARDS: boardsDir }) }).unref();
     const deadline = Date.now() + 5000;
     while (Date.now() < deadline) {
       await new Promise((r) => setTimeout(r, 150));

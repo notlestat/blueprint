@@ -1,20 +1,75 @@
 {
   "name": "blueprint",
+  "productName": "Blueprint",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "Design UI with your coding agent on a shared canvas. The agent draws screens as working HTML, you mark them up with notes, arrows and comments, and it reads the board and revises.",
+  "main": "desktop/main.mjs",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
     "start": "node server.mjs",
+    "app": "electron .",
+    "app:build": "electron-builder --mac --dir",
     "skills": "node scripts/export-skills.mjs",
-    "test": "node --test test/*.test.mjs"
+    "test": "node --test test/*.test.mjs",
+    "app:dmg": "electron-builder --mac"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "0.3.325",
     "@modelcontextprotocol/sdk": "1.32.2",
     "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "electron": "44.10.1",
+    "electron-builder": "26.18.1"
+  },
+  "build": {
+    "appId": "app.blueprint.desktop",
+    "productName": "Blueprint",
+    "asar": false,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "desktop/**",
+      "lib/**",
+      "public/**",
+      "server.mjs",
+      "mcp.mjs",
+      "skills.config.json",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.graphics-design",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
+      "identity": "-",
+      "hardenedRuntime": false,
+      "artifactName": "Blueprint-${version}-${arch}.${ext}"
+    },
+    "dmg": {
+      "title": "Blueprint ${version}"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "notlestat",
+      "repo": "blueprint",
+      "releaseType": "draft"
+    }
   }
 }
